@@ -22,7 +22,7 @@ function geom = genGeometry(g)
     geom.piezoRightCentre = [g.sep, g.hp];
 
     % equations of lines through piezos
-    geom.piezoLeft = @(x) tand(geom.thetaT)*x + geom.piezoLeftCentre;
+    geom.piezoLeft = @(x) tand(g.thetaT)*x + geom.piezoLeftCentre(2);
     geom.piezoRight = @(x) -tand(g.thetaT)*x + geom.piezoRightCentre(2) + tand(g.thetaT)*geom.piezoRightCentre(1);
 
     % bounds for piezos
