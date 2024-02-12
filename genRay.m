@@ -1,13 +1,12 @@
-function ray = genRay(geom, x0, burst)
-    % Takes the geometry struct from genGeometry and an x coordinate for the
+function ray = genRay(geom, mat, x0)
+    % Takes the geometry struct from genGeometry, the materials stuct,
+    % and an x coordinate for the
     % starting point. Generates a ray from the left piezo at 90 degrees to
-    % the piezo face. The final input is the burst time trace associated with 
-    % the ray when it is emitted.The ray that is output is a struct with
+    % the piezo face. The ray that is output is a struct with
     % fields: 
     % eq: the equation of the line
     % start: the starting coordinates at the left piezo
     % end: the point at which it intercepts the pipe
-    % burst: the time domain ultrasonic burst
 
     % check that x0 is on the piezo
     bounds = geom.piezoLeftBounds.x;
@@ -23,6 +22,10 @@ function ray = genRay(geom, x0, burst)
     % intersection point with pipe
     ray.stop = [(geom.pipeExtTop-c)/m, geom.pipeExtTop];
 
-    ray.burst = burst;
+    % ray is travelling through transducer
+    ray.material = mat.transducer;
+
+    % type of wave
+    ray.type = 'long'; % emitted from piezo
 
 end    
