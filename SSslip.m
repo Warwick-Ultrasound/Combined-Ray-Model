@@ -10,7 +10,7 @@ function [A, theta] = SSslip(m1, m2, theta0, f, inType)
     betap = m2.cshear;
     rho = m1.rho;
     rhop = m2.rho;
-    if inType == "long" 
+    if inType == "L" 
         c_inc = m1.clong; % set incidence velocity
         A1 = 1; % incidence longitudinal amplitude
         B1 = 0; % incidence shear amplitude

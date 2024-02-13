@@ -29,3 +29,7 @@ steel.alphaf0 = 1E6;
 % water
 water.clong = c_water(20);
 water.rho = 1000;
+
+% air
+air.clong = 330;
+air.rho = 1.293;

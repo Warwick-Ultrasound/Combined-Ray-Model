@@ -1,9 +1,9 @@
 function ray = genRay(geom, mat, x0)
     % Takes the geometry struct from genGeometry, the materials stuct,
-    % and an x coordinate for the
-    % starting point. Generates a ray from the left piezo at 90 degrees to
-    % the piezo face. The ray that is output is a struct with
-    % fields: 
+    % and an x coordinate for the starting point. Generates a ray from the
+    % left piezo at 90 degrees to the piezo face. The ray that is output 
+    % is a struct with fields: 
+    %
     % eq: the equation of the line
     % start: the starting coordinates at the left piezo
     % end: the point at which it intercepts the pipe
@@ -26,6 +26,6 @@ function ray = genRay(geom, mat, x0)
     ray.material = mat.transducer;
 
     % type of wave
-    ray.type = 'long'; % emitted from piezo
+    ray.type = 'L'; % emitted from piezo
 
 end    

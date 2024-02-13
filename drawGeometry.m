@@ -11,8 +11,8 @@ function drawGeometry(g)
     yline(g.pipeExtBot/1E-3, 'k-');
 
     % plot piezos
-    plot(g.piezoLeftBounds.x/1E-3, g.piezoLeftBounds.y/1E-3, 'b-');
-    plot(g.piezoRightBounds.x/1E-3, g.piezoRightBounds.y/1E-3, 'b-');
+    plot(g.piezoLeftBounds.x/1E-3, g.piezoLeftBounds.y/1E-3, 'k-');
+    plot(g.piezoRightBounds.x/1E-3, g.piezoRightBounds.y/1E-3, 'k-');
 
     hold off;
 

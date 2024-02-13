@@ -1,4 +1,4 @@
-function y = genBurst(t, f0, BW)
+function B = genBurst(t, f0, BW)
     % Generates a burst on time array t with centre frequency f0 and the
     % specified percentage bandwidth (between 0 and 100). Note that
     % bandwidth isnt the half-height of the peak but the full hanning
@@ -23,5 +23,10 @@ function y = genBurst(t, f0, BW)
 
     % move so that highest point is at t = 0
     [~,zero] = min(abs(t));
-    y = circshift(y, zero);
+    B.y = circshift(y, zero);
+
+    % fill in additional info
+    B.t = t;
+    B.f0 = f0;
+    B.BW = BW;
 end

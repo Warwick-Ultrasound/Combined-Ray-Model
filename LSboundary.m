@@ -1,5 +1,5 @@
 % Solid - liquid boundary condition calculator. Gives the amplitudes of the
-% waves in the solid and liquid. Following Rose "Ultrasonic Guided Wavesin Solid Media"
+% waves in the solid and liquid. Following Rose "Ultrasonic Guided Waves in Solid Media"
 function [A, theta] = LSboundary(m1, m2, theta0, f)
     % A function which calculates the amplitudes and angles of the
     % reflected and transmitted waves when a ray of amplitude 

@@ -27,7 +27,7 @@ function [A, theta] = SLboundary(m1, m2, theta0, f, inType)
     w = 2*pi*f;
 
     % calculate wavenumbers
-    if inType == "long"
+    if inType == "L"
         k0 = w/m1.clong;
     else
         k0 = w/m1.cshear;
@@ -54,7 +54,7 @@ function [A, theta] = SLboundary(m1, m2, theta0, f, inType)
          -k1L*rho1*c1L^2*cosd(2*alphaT),    k1T*mu1*sind(2*alphaT),     k2L*rho2*c2L^2;
          -k1L*mu1*sind(2*alphaL),           -k1T*mu1*cosd(2*alphaT),    0];
 
-    if inType == "long"
+    if inType == "L"
         x = [-cosd(alphaL), k1L*rho1*c1L^2*cosd(2*alphaT), -k1L*mu1*sind(2*alphaL)].';
     else
         x = [sind(alphaT), -k1T*mu1*sind(2*alphaT), -k1T*mu1*cosd(2*alphaT)].';

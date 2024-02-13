@@ -14,8 +14,9 @@ function geom = genGeometry(g)
     % y values for pipe boundaries
     geom.pipeExtTop = g.thick; % top, exterior
     geom.pipeIntTop = 0; % top, interior
-    geom.pipeIntBot = -g.R; % bottom, interior
-    geom.pipeExtBot = -g.R - g.thick; % bottom, exterior
+    geom.pipeIntBot = -2*g.R; % bottom, interior
+    geom.pipeExtBot = -2*g.R - g.thick; % bottom, exterior
+    geom.R = g.R; % radius for convenience later
 
     % coords for piezo centres
     geom.piezoLeftCentre = [0, g.hp];

@@ -28,7 +28,7 @@ function [A, theta] = SSrigid(m1, m2, theta0, f, inType)
     w = 2*pi*f;
 
     % calculate wavenumbers
-    if inType == "long"
+    if inType == "L"
         k0 = w/m1.clong;
     else
         k0 = w/m1.cshear;
@@ -62,7 +62,7 @@ function [A, theta] = SSrigid(m1, m2, theta0, f, inType)
          -k1L*mu1*sind(2*alphaL),           -k1T*mu1*cosd(2*alphaT),    -k2L*mu2*sind(2*betaL),          -k2T*mu2*cosd(2*betaT)];
 
     % create other matrix
-    if inType == "long" % NOTE: book has mistake for these: still using old notation from old version but have changed meaning of alphaL and T.
+    if inType == "L" % NOTE: book has mistake for these: still using old notation from old version but have changed meaning of alphaL and T.
         x = [-cosd(theta0), sind(theta0), k1L*rho1*c1L^2*cosd(2*alphaT), -k1L*mu1*sind(2*theta0)].';
     else
         x = [sind(theta0), cosd(theta0), -k1T*mu1*sind(2*theta0), -k1T*mu1*cosd(2*theta0)].';
