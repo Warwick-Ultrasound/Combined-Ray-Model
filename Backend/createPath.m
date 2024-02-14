@@ -36,6 +36,10 @@ function P = createPath(g, mat, x0, pathKey, B, flow)
             error('No coupling type selected in materials struct. Valid are options are rigid or slip.' );
     end
 
+    % turn off warning when beyondcritical angle - this is handled
+    % separately
+    warning('off', 'MATLAB:illConditionedMatrix');
+
     % will operate on burst in frequency domain => FFT
     fs = 1/(B.t(2)-B.t(1));
     freq = linspace(-fs/2, fs/2, length(B.t));

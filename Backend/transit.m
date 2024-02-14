@@ -33,6 +33,7 @@ function spect = transit(ray, freq, spect)
         end
         m = alpha0/ray.material.alphaf0; % gradient of line
         alpha = m*freq;
+        alpha(1:end/2+1) = fliplr(alpha(end/2:end)); % force symmetry
 
         spect = spect.*10.^(-alpha*d/20); % apply attenuation, converting from dB/m
         

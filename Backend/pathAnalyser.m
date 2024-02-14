@@ -1,7 +1,16 @@
-function pathAnalyser(paths)
+function [pathKeys, pkpk2] = pathAnalyser(paths, display)
     % Searches through the paths created to see which modes the
     % contributions come from. Want the total peak to peak from different
-    % pathKeys plotted as a bar chart
+    % pathKeys plotted as a bar chart.
+    %
+    % Inputs:
+    %   paths: cell array of path structs
+    %   display: bool determines whether or not figures are plotted
+    %
+    % Outputs:
+    %   pathKeys: categorical of possible pathKeys in correct order
+    %   pkpk2: pk-pk amplitude of summed waveforms for each pathKey
+
 
     % extract possible pathKeys from paths
     col = paths(:,1); % one source ray, all resultant rays. Contains all poss pathKeys
@@ -25,11 +34,13 @@ function pathAnalyser(paths)
     end
 
     % plot bar graph
-    figure;
-    bar(pathKeys, pkpk);
-    xlabel('Path Taken');
-    ylabel('Sum of pk-pk of contributions /arb.');
-    title('Sum of pk-pk of each contribution', 'Does not take into account the phase');
+    if display
+        figure;
+        bar(pathKeys, pkpk);
+        xlabel('Path Taken');
+        ylabel('Sum of pk-pk of contributions /arb.');
+        title('Sum of pk-pk of each contribution', 'Does not take into account the phase');
+    end
 
     % repeat, this time summing the signals and taking the peak-to-peak of
     % that. This accounts for phase differences and
@@ -39,10 +50,10 @@ function pathAnalyser(paths)
     for ii = 1:length(pathKeys)
 
         % construct signal
-        pathSignals{ii} = zeros(size(paths{ii}.burst));
+        pathSignals{ii} = zeros(size(paths{ii,jj}.burst));
         for jj = 1:size(paths, 2) % all paths with same pathKey
-            if paths{ii}.detected
-                pathSignals{ii} = pathSignals{ii} + paths{ii}.burst;
+            if paths{ii,jj}.detected
+                pathSignals{ii} = pathSignals{ii} + paths{ii,jj}.burst;
             end
         end
 
@@ -51,10 +62,11 @@ function pathAnalyser(paths)
     end
 
     % plot bar graph
-    figure;
-    bar(pathKeys, pkpk2);
-    xlabel('Path Taken');
-    ylabel('pk-pk of summed contributions /arb.');
-    title('pk-pk of summed signal', 'Does take into account the phase');
-
+    if display
+        figure;
+        bar(pathKeys, pkpk2);
+        xlabel('Path Taken');
+        ylabel('pk-pk of summed contributions /arb.');
+        title('pk-pk of summed signal', 'Does take into account the phase');
+    end
 end

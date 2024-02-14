@@ -1,7 +1,7 @@
 function drawGeometry(g)
     % Draws the geometry in the input struct for checking.
 
-    figure;
+    %figure;
     
     % plot pipe boundaries
     yline(g.pipeIntTop/1E-3, 'k--');

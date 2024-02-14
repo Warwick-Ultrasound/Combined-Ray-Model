@@ -1,8 +1,14 @@
-% MAIN script - initially just going to be to test everything
+% MAIN script - Tests at a variety of flow rates and reports back the
+% transit time difference as a function of flow velcoity, the flow profile
+% correction factor, and a breakdown of which paths the ultrasound has
+% taken to reach the detector.
 
 clear;
 clc;
 close all;
+
+% add backend to path
+addpath('Backend');
 
 % define geometry
 gInp.R = 50E-3;
@@ -103,7 +109,7 @@ ylabel('Amplitude /arb.');
 legend('down', 'up');
 
 % Analyse where the contributions come from
-pathAnalyser(Pup);
+pathAnalyser(Pup, 1);
 
 % TTD PLOT
 % calculate theoretical for plug flow
