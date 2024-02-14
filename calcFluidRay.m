@@ -50,4 +50,5 @@ function ray = calcFluidRay(startCoords, theta0, flow, g, mat, varargin)
     ray.coords = [x.',y.'];
     ray.material = mat.fluid;
     ray.type = 'L';
+    ray.theta0 = theta0;
 end

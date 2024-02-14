@@ -23,7 +23,7 @@ function P = createPath(g, mat, x0, pathKey, B, flow)
     % Output:
     %   A path structure with fields:
     %       rays: a cell array with all of the ray structs in it.
-    %       burst: the ultrasnic signal that reaches the detector.
+    %       burst: the ultrasonic signal that reaches the detector.
     %       pathKey: the input pathKey.
 
     % pick out correct function for SS boundary
@@ -90,7 +90,7 @@ function P = createPath(g, mat, x0, pathKey, B, flow)
             theta_w = theta(1); % save angle in still water
 
             % transmit through fluid
-            spect = transit(P.rays{3}, freq, spect);
+            spect = transit(P.rays{4}, freq, spect);
 
             i_ray = 5; % next ray number to insert
 
@@ -159,6 +159,13 @@ function P = createPath(g, mat, x0, pathKey, B, flow)
     spect = spect*A(3); % always longitudinal
     P.rays{i_ray} = genArbRay(P.rays{i_ray-1}.stop, 180-theta(3), 'L', mat.transducer, g, 'piezoRight');
 
+    % see if its detected
+    if isnan(P.rays{end}.stop(1)) % not detected
+        P.detected = 0;
+    else
+        P.detected = 1;
+    end
+    
     % transit through wedge
     spect = transit(P.rays{i_ray}, freq, spect);
 
@@ -169,3 +176,4 @@ function P = createPath(g, mat, x0, pathKey, B, flow)
     P.time = B.t;
     P.pathKey = pathKey;
     P.x0 = x0;
+    P.pk_pk = max(P.burst) - min(P.burst); % peak to peak amplitude

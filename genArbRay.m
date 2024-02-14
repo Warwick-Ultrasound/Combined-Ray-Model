@@ -25,7 +25,8 @@ function ray = genArbRay(startCoords, theta, type, material, g, nextBound)
             x = f(y);
         case 'piezoRight'
             intersect = @(x) ray.eq(x) - g.piezoRight(x); % minimise this to find where lines meet
-            x = fsolve(intersect, g.piezoRightCentre(2));
+            options = optimoptions(@fsolve, 'Display', 'none');
+            x = fsolve(intersect, g.piezoRightCentre(2), options);
             y = ray.eq(x);
 
             % ensure that this is within piezo bounds

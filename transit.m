@@ -2,22 +2,25 @@ function spect = transit(ray, freq, spect)
     % applies the effect of transiting through whichever material it is in
     % to the burst. Includes both attenuation and propagation.
 
-    % find distance travelled
-    if isfield(ray, 'eq') % straight ray
-        dx = ray.stop(1)-ray.start(1);
-        dy = ray.stop(2)-ray.start(2);
-        d = sqrt(dx^2+dy^2);
-    else % curved ray, already calculated d
-        d = ray.d;
-    end
-    
-    % find time of transit
+    % speed of sound
     if ray.type == "L"
         c = ray.material.clong;
     else
         c = ray.material.cshear;
     end
-    T = d/c;
+
+    % find distance travelled and transit time
+    if isfield(ray, 'eq') % straight ray
+        dx = ray.stop(1)-ray.start(1);
+        dy = ray.stop(2)-ray.start(2);
+        d = sqrt(dx^2+dy^2);
+        T = d/c;
+    else % curved ray - use vertical components so the distance doesn't change with flow
+        y = ray.coords(:,end);
+        dy = max(y)-min(y);
+        cy = c*cosd(ray.theta0);
+        T = dy/cy; 
+    end
 
     % Apply attenuation
     if isfield(ray.material, 'alphaLong') % is attenuative, apply attenuation
@@ -31,7 +34,7 @@ function spect = transit(ray, freq, spect)
         m = alpha0/ray.material.alphaf0; % gradient of line
         alpha = m*freq;
 
-        spect = spect.*exp(-alpha*d); % apply attenuation
+        spect = spect.*10.^(-alpha*d/20); % apply attenuation, converting from dB/m
         
     end
 
