@@ -4,9 +4,11 @@ function signal = receivedSignal(paths)
 
     signal = zeros(size(paths{1}.burst));
 
-    for ii = 1:length(paths)
-        if paths{ii}.detected
-            signal = signal + paths{ii}.burst;
+    for ii = 1:size(paths, 1)
+        for jj = 1:size(paths, 2)
+            if paths{ii,jj}.detected
+                signal = signal + paths{ii,jj}.burst;
+            end
         end
     end
 end

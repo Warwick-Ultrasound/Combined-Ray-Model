@@ -10,8 +10,8 @@ function ray = genRay(geom, mat, x0)
 
     % check that x0 is on the piezo
     bounds = geom.piezoLeftBounds.x;
-    if ~(x0>bounds(1) && x0<bounds(2))
-        error('Error in createRay. Starting location not on piezo');
+    if ~(x0>=bounds(1) && x0<=bounds(2))
+        error('Error in genRay. Starting location not on piezo');
     end
 
     m = -1/tand(geom.thetaT); % gradient of ray

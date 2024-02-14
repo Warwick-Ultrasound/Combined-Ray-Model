@@ -59,9 +59,17 @@ function P = createPath(g, mat, x0, pathKey, B, flow)
     switch pathKey(1)
         case 'L'
             spect = spect*A(3);
+            if ~isreal(theta(3)) % beyond critical angle => not possible path
+                P = impossiblePath(B.t, pathKey, length(P.rays), x0);
+                return
+            end
             P.rays{2} = genArbRay(P.rays{1}.stop, theta(3), 'L', mat.pipe, g, 'pipeIntTop');
         case 'S'
             spect = spect*A(4);
+            if ~isreal(theta(4)) % beyond critical angle => not possible path
+                P = impossiblePath(B.t, pathKey, length(P.rays), x0);
+                return
+            end
             P.rays{2} = genArbRay(P.rays{1}.stop, theta(4), 'S', mat.pipe, g, 'pipeIntTop');
     end
 
@@ -156,6 +164,10 @@ function P = createPath(g, mat, x0, pathKey, B, flow)
 
     % refract into wedge
     [A, theta] = SSboundary(mat.pipe, mat.transducer, getAngle(P.rays{i_ray-1}), B.f0, P.rays{i_ray-1}.type);
+    if ~isreal(theta(3)) || isnan(theta(3)) % beyond critical angle => not possible path
+        P = impossiblePath(B.t, pathKey, length(P.rays), x0);
+        return
+    end
     spect = spect*A(3); % always longitudinal
     P.rays{i_ray} = genArbRay(P.rays{i_ray-1}.stop, 180-theta(3), 'L', mat.transducer, g, 'piezoRight');
 

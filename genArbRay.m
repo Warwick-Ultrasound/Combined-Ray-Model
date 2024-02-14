@@ -34,7 +34,6 @@ function ray = genArbRay(startCoords, theta, type, material, g, nextBound)
             yOutBounds = y>g.piezoRightBounds.y(1) || y<g.piezoRightBounds.y(2);
 
             if xOutBounds || yOutBounds
-                disp('Received ray missed piezo. End locations of ray are NaN');
                 x = nan;
                 y = nan;
             end

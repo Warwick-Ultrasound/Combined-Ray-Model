@@ -1,4 +1,9 @@
 function v = turbulent(r, R, v_ave, n)
+
+    if isnan(n)
+        error('Turbulent profile order n not set.');
+    end
+
     if r <= R
         v = (1-abs(r)/R).^(1/n); % correct shape, but need to scale
 

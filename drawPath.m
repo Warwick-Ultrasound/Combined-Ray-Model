@@ -27,4 +27,9 @@ function drawPath(path)
 
         end
     end
+
+    % fix aspect ratio of plot
+    xl = xlim;
+    yl = ylim;
+    pbaspect([diff(xl), diff(yl), 1]);
 end
