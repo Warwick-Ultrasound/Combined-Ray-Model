@@ -32,14 +32,15 @@ function spect = transit(ray, freq, spect)
             alpha0 = ray.material.alphaShear;
         end
         m = alpha0/ray.material.alphaf0; % gradient of line
-        alpha = m*freq;
-        alpha(1:end/2+1) = fliplr(alpha(end/2:end)); % force symmetry
+        alpha = m*freq(end/2:end); % just calculate for positive half
 
-        spect = spect.*10.^(-alpha*d/20); % apply attenuation, converting from dB/m
+        factor = 10.^(-alpha*d/20); % attenuation factor as a function of frequency
         
+    else
+        factor = 1; % no attenuation
     end
 
-    % apply transit delay
-    spect = spect.*exp(-1i*2*pi*freq*T);
+    % apply transit delay, only care about positive half 
+    spect(end/2:end) = spect(end/2:end).*exp(-1i*2*pi*freq(end/2:end)*T).*factor;
 
 end

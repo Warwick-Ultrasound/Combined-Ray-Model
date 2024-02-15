@@ -6,7 +6,7 @@
 clear;
 clc;
 close all;
-
+tic;
 % add backend to path
 addpath('Backend');
 
@@ -23,31 +23,40 @@ gInp.R = 50E-3;
 gInp.thick = 3E-3;
 gInp.thetaT = 38;
 gInp.hp = 15E-3;
-gInp.Lp = 20E-3;
+gInp.Lp = 10E-3;
 LNNLsep = transducerPositionCalc(gInp, mat, 'LNNL');
 LLLLsep = transducerPositionCalc(gInp, mat, 'LLLL');
 SNNSsep = transducerPositionCalc(gInp, mat, 'SNNS');
 SSSSsep = transducerPositionCalc(gInp, mat, 'SSSS');
 userSeps = [LNNLsep, LLLLsep, SNNSsep, SSSSsep]; % separations that the user may select
-gInp.sep = SNNSsep; % pick one that will walways be non-nan for initial setup.
-minSep = min(userSeps)-5E-3; % smaller than smallest user separation
+gInp.sep = SNNSsep; % pick one that will always be non-nan for initial setup.
+minSep = min(userSeps)-10E-3; % smaller than smallest user separation
 maxSep = max(userSeps)+5E-3;
-seps = linspace(minSep, maxSep, 10);
+seps = linspace(minSep, maxSep, 50); % list of transducer separations to calculate for
 
 % Number of source rays (16 total rays possible for each 1 source ray)
-Ns = 10;
+Ns = 50;
 
 % ultrasonic burst parameters
 t.min = -10E-6; % allows it to be centred on zero at start
 t.max = 300E-6; % max travel time of signal
-t.len = 1E5; % number of points in time trace
 f0 = 1E6; % centre frequency
 BW = 30; % bandwidth (% of f0) - note full window width not half-height
+% calc sample rate from Nyquist
+fmax = (1+BW/100)*f0;
+Nyquist = 2*fmax;
+fs = 4*Nyquist; % 4 x nyquist to be safe
+t.dt = 1/fs;
+t.len = ceil((t.max - t.min)/t.dt); % number of points in time domain
+
+% timing precsion
+t.ddt = 0.01E-9; % smallest change in TTD able to measure
+N_interp = ceil(t.dt/t.ddt); % interpolation factor required
 
 % flow profile parameters
 initialFlow.profile = @laminar;
 initialFlow.v_ave = 1; % initial value, will cycle through v_ave_list
-initialFlow.N = 100;
+initialFlow.N = 1000;
 initialFlow.n = 7;
 
 % generate burst
@@ -56,9 +65,6 @@ B = genBurst(time, f0, BW);
 
 % generate geometry struct
 g = genGeometry(gInp);
-
-% draw it to check
-drawGeometry(g);
 
 % generate x locations along left piezo
 x0 = linspace(g.piezoLeftBounds.x(1), g.piezoLeftBounds.x(2), Ns);
@@ -106,7 +112,8 @@ for ss = 1:length(seps)
     down = receivedSignal(Pdown);
 
     % measure TTD
-    TTD(ss) = flow_process_SG_filt(up, down, time, 100, 1, length(time));
+    [start, stop] = arrival_detect(up, 1); % detect location of arrival
+    TTD(ss) = flow_process_SG_filt(up, down, time, N_interp, start, stop);
 
     % Analyse where the contributions come from - doesn't matter which flow
     % rate, so just do last one
@@ -118,35 +125,30 @@ for ss = 1:length(seps)
 
 end
 
+% draw last calculated set of paths on top of geometry
+drawGeometry(g);
+drawAllPaths(Pup);
+
 figure;
 plot(seps/1E-3, FPCF);
-xline(userSeps/1E-3);
-legend({'FPCF', 'LNNL', 'LLLL', 'SNNS', 'SSSS'});
+xline(userSeps/1E-3, 'k-', {'LNNL', 'LLLL', 'SNNS', 'SSSS'});
 xlabel("Transducer Separation /mm");
 ylabel("Hydraulic Correction Factor");
 
 figure;
-bar(pathKeys, pkpk(:,1));
+bar3(seps/1E-3, pkpk.');
+ylabel('Transducer Separation /mm');
+xticklabels(pathKeys);
+view(62,18);
 
+% plot pk-pk of 5 largest contributors
+maxpkpk = max(pkpk, [], 2);
+[~,I] = maxk(maxpkpk, 5);
 figure;
-bar3(pkpk)
-
-
-% % draw last calculated path 
-% for ii = 1:Ns
-%     for jj = 1:16
-%         path = Pup{jj,ii};
-%         if path.detected
-%             drawPath(path);
-%         end
-%     end
-% end
-% 
-% % plot last caculated pair of waveforms
-% figure;
-% plot(time/1E-6, down, time/1E-6, up);
-% xlabel('Time /\mus');
-% ylabel('Amplitude /arb.');
-% legend('down', 'up');
+plot(seps/1E-3, pkpk(I,:));
+legend(pathKeys(I));
+xlabel('Separation /mm');
+ylabel('Peak to Peak Ampltiude /arb.');
 
 findfigs;
+toc;
