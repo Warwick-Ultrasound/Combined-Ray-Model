@@ -8,7 +8,7 @@ function sep = transducerPositionCalc(g, mat, pathKey)
     % The output is the centre-to-centre transducer separation in metres,
     % or NaN if path is not possible for the system input.
     
-    xT = g.hp*tand(g.thetaT); % x dist in transducer
+    xT = (g.hp-g.thick)*tand(g.thetaT); % x dist in transducer
 
     % angle in liquid
     theta_l = asind( mat.fluid.clong/mat.transducer.clong * sind(g.thetaT) );

@@ -7,6 +7,7 @@ clear;
 clc;
 close all;
 tic;
+
 % add backend to path
 addpath('Backend');
 
@@ -32,7 +33,7 @@ userSeps = [LNNLsep, LLLLsep, SNNSsep, SSSSsep]; % separations that the user may
 gInp.sep = SNNSsep; % pick one that will always be non-nan for initial setup.
 minSep = min(userSeps)-10E-3; % smaller than smallest user separation
 maxSep = max(userSeps)+5E-3;
-seps = linspace(minSep, maxSep, 50); % list of transducer separations to calculate for
+seps = linspace(minSep, maxSep, 500); % list of transducer separations to calculate for
 
 % Number of source rays (16 total rays possible for each 1 source ray)
 Ns = 50;
@@ -50,7 +51,7 @@ t.dt = 1/fs;
 t.len = ceil((t.max - t.min)/t.dt); % number of points in time domain
 
 % timing precsion
-t.ddt = 0.01E-9; % smallest change in TTD able to measure
+t.ddt = 0.001E-9; % smallest change in TTD able to measure
 N_interp = ceil(t.dt/t.ddt); % interpolation factor required
 
 % flow profile parameters
@@ -125,9 +126,9 @@ for ss = 1:length(seps)
 
 end
 
-% draw last calculated set of paths on top of geometry
-drawGeometry(g);
-drawAllPaths(Pup);
+% % draw last calculated set of paths on top of geometry
+% drawGeometry(g);
+% drawAllPaths(Pup);
 
 figure;
 plot(seps/1E-3, FPCF);
@@ -146,6 +147,7 @@ maxpkpk = max(pkpk, [], 2);
 [~,I] = maxk(maxpkpk, 5);
 figure;
 plot(seps/1E-3, pkpk(I,:));
+xline(userSeps/1E-3, 'k-', {'LNNL', 'LLLL', 'SNNS', 'SSSS'});
 legend(pathKeys(I));
 xlabel('Separation /mm');
 ylabel('Peak to Peak Ampltiude /arb.');
