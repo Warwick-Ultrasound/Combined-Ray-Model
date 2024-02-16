@@ -1,4 +1,4 @@
-function P = createPath(g, mat, x0, pathKey, B, flow)
+function P = createPath(g, mat, x0, pathKey, B, flow, varargin)
     % Takes an x location that is within the bounds of the left piezo and
     % generates a ray normal to it. Then, propagates the ray through the
     % system and creates a path struct. 
@@ -19,6 +19,8 @@ function P = createPath(g, mat, x0, pathKey, B, flow)
     %       v_ave: average flow velcoity
     %       N: number of points per transit
     %       n: order of turbulent profile, set to anything if not using
+    %   dtheta: (optional) deflects the starting ray by an angle in degrees
+    %   from the piezo normal. 
     %
     % Output:
     %   A path structure with fields:
@@ -36,7 +38,7 @@ function P = createPath(g, mat, x0, pathKey, B, flow)
             error('No coupling type selected in materials struct. Valid are options are rigid or slip.' );
     end
 
-    % turn off warning when beyondcritical angle - this is handled
+    % turn off warning when beyond critical angle - this is handled
     % separately
     warning('off', 'MATLAB:illConditionedMatrix');
 
@@ -53,7 +55,12 @@ function P = createPath(g, mat, x0, pathKey, B, flow)
     end
 
     % generate ray at left piezo
-    P.rays{1} = genRay(g, mat, x0);
+    if ~isempty(varargin) % check if deflection requested or not
+        P.rays{1} = genRay(g, mat, x0, varargin{1});
+        spect = spect*varargin{2}; % reduce amplitude of starting ray according to Huygens
+    else
+        P.rays{1} = genRay(g, mat, x0);
+    end
 
     % propagate through wedge
     spect = transit(P.rays{1}, freq, spect);

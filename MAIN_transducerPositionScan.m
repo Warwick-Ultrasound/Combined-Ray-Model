@@ -33,10 +33,7 @@ userSeps = [LNNLsep, LLLLsep, SNNSsep, SSSSsep]; % separations that the user may
 gInp.sep = SNNSsep; % pick one that will always be non-nan for initial setup.
 minSep = min(userSeps)-10E-3; % smaller than smallest user separation
 maxSep = max(userSeps)+5E-3;
-seps = linspace(minSep, maxSep, 500); % list of transducer separations to calculate for
-
-% Number of source rays (16 total rays possible for each 1 source ray)
-Ns = 50;
+seps = linspace(minSep, maxSep, 50); % list of transducer separations to calculate for
 
 % ultrasonic burst parameters
 t.min = -10E-6; % allows it to be centred on zero at start
@@ -49,26 +46,25 @@ Nyquist = 2*fmax;
 fs = 4*Nyquist; % 4 x nyquist to be safe
 t.dt = 1/fs;
 t.len = ceil((t.max - t.min)/t.dt); % number of points in time domain
+% generate burst
+time = linspace(t.min, t.max, t.len);
+B = genBurst(time, f0, BW);
 
 % timing precsion
 t.ddt = 0.001E-9; % smallest change in TTD able to measure
 N_interp = ceil(t.dt/t.ddt); % interpolation factor required
+
+% Rays to simulate Parameters(16 total rays possible for each 1 source ray)
+Nperp = 50; % Number of source rays perpendicular to piezo
+Nang = 10; % number of rays angled at each edge of piezo for beam spread
+g = genGeometry(gInp); % generate temporary geometry for calculation of rays
+[x0, dtheta, A] = genBeam(g, mat, B, Nperp, Nang); % positions, deflections and amplitudes of rays
 
 % flow profile parameters
 initialFlow.profile = @laminar;
 initialFlow.v_ave = 1; % initial value, will cycle through v_ave_list
 initialFlow.N = 1000;
 initialFlow.n = 7;
-
-% generate burst
-time = linspace(t.min, t.max, t.len);
-B = genBurst(time, f0, BW);
-
-% generate geometry struct
-g = genGeometry(gInp);
-
-% generate x locations along left piezo
-x0 = linspace(g.piezoLeftBounds.x(1), g.piezoLeftBounds.x(2), Ns);
 
 % calculate theoretical for plug flow
 theta_f = asind( mat.fluid.clong/mat.transducer.clong * sind(g.thetaT) );
@@ -92,17 +88,17 @@ for ss = 1:length(seps)
     g = genGeometry(g);
 
     % create the paths
-    Pdown = cell(16, Ns); % one column per source ray
+    Pdown = cell(16, length(x0)); % one column per source ray
     Pup = cell(size(Pdown));
-    for ii = 1:Ns
-        paths = genAllPaths(g, mat, x0(ii), B, flow);
+    for ii = 1:length(x0)
+        paths = genAllPaths(g, mat, x0(ii), B, flow, dtheta(ii), A(ii));
         for jj = 1:16
             Pdown{jj,ii} = paths{jj};
         end
     end
     flow.v_ave = -flow.v_ave; % switch flow to other direction
-    for ii = 1:Ns
-        paths = genAllPaths(g, mat, x0(ii), B, flow);
+    for ii = 1:length(x0)
+        paths = genAllPaths(g, mat, x0(ii), B, flow, dtheta(ii), A(ii));
         for jj = 1:16
             Pup{jj,ii} = paths{jj};
         end
