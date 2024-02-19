@@ -11,7 +11,7 @@ function ray = genRay(geom, mat, x0, varargin)
 
     % check that x0 is on the piezo
     bounds = geom.piezoLeftBounds.x;
-    if ~(x0>=bounds(1) && x0<=bounds(2))
+    if ~(x0>=bounds(1) && x0<=bounds(2)) && min(x0-bounds)>1E-6 % 2nd part deals with rounding errors
         error('Error in genRay. Starting location not on piezo');
     end
 

@@ -5,7 +5,7 @@ function drawPath(path)
     rays = path.rays;
     for ii = 1:length(rays)
         if isempty(rays{ii})
-            continue % skip that ray if there s nothing there
+            continue % skip that ray if there is nothing there
         end
         
         % determine lineSpec of ray

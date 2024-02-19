@@ -1,4 +1,4 @@
-function [x0, dtheta, A] = genBeam(g, mat, B, Nperp, Nang)
+function [x0, dtheta, A] = genBeam(g, mat, B, Np, Nfan)
     % Gives the x coordinates, deflection angles and amplitudes of a beam
     % calculated from a huygens model of the piezo.
 
@@ -10,43 +10,17 @@ function [x0, dtheta, A] = genBeam(g, mat, B, Nperp, Nang)
     A0 = Huygens(g, mat, B, 0, -rp); % straight under rightmost edge at rp
     A = A0; % initialise variable to change
     thetaMax = 0;
-    while A > 0.1*A0 % keep going until amplitude drops by 90%
+    while A > 0.25*A0 % keep going until amplitude drops by 75%
         thetaMax = thetaMax + theta_step;
         A = Huygens(g, mat, B, rp*sind(thetaMax), -rp*cosd(thetaMax));
     end
 
     % --- generate (x,y) coords for Huygens model ---
-    % initialise arrays
-    x = nan(Nperp + 2*Nang, 1);
-    y = nan(size(x));
-    % left arc
-    theta = linspace(-thetaMax, 0, Nang);
-    x(1:Nang) = -Lp - rp*sind(theta);
-    y(1:Nang) = -rp*cosd(theta);
-    % middle section
-    x(Nang+1:Nang+Nperp) = linspace(-Lp, 0, Nperp);
-    y(Nang+1:Nang+Nperp) = -rp*ones(Nperp, 1);
-    % right arc
-    theta = flip(theta);
-    x(Nang+Nperp+1:end) = rp*sind(theta);
-    y(Nang+Nperp+1:end) = -rp*cosd(theta);
-
-    % calculate amplitudes
-    A = nan(size(x));
-    for ii = 1:length(A)
-        A(ii) = Huygens(g, mat, B, x(ii), y(ii))/A0;
-    end
-
-    % calculate x and dtheta for ouput in ray model coord system
-    x0 = nan(size(x));
-    x0(1:Nang) = g.piezoLeftBounds.x(1);
-    x0(Nang+1:Nang+Nperp) = linspace(g.piezoLeftBounds.x(1), g.piezoLeftBounds.x(2), Nperp);
-    x0(Nang+Nperp+1:end) = g.piezoLeftBounds.x(2);
-
-    dtheta = nan(size(x0));
-    dtheta(1:Nang) = flip(theta);
-    dtheta(Nang+1:Nang+Nperp) = 0;
-    dtheta(Nang+Nperp+1:end) = theta;
+    x0 = linspace(g.piezoLeftBounds.x(1), g.piezoLeftBounds.x(2), Np);
+    x0 = repelem(x0, Nfan);
+    dtheta = linspace(-thetaMax, thetaMax, Nfan);
+    dtheta = repmat(dtheta, 1, Np);
+    A = ones(size(dtheta));
 
 end
 function A = Huygens(g, mat, B, x, y)

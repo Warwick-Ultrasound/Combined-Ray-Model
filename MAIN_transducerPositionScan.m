@@ -31,9 +31,9 @@ SNNSsep = transducerPositionCalc(gInp, mat, 'SNNS');
 SSSSsep = transducerPositionCalc(gInp, mat, 'SSSS');
 userSeps = [LNNLsep, LLLLsep, SNNSsep, SSSSsep]; % separations that the user may select
 gInp.sep = SNNSsep; % pick one that will always be non-nan for initial setup.
-minSep = min(userSeps)-10E-3; % smaller than smallest user separation
-maxSep = max(userSeps)+5E-3;
-seps = linspace(minSep, maxSep, 50); % list of transducer separations to calculate for
+minSep = min(userSeps)-15E-3; % smaller than smallest user separation
+maxSep = max(userSeps)+15E-3;
+seps = linspace(minSep, maxSep, 300); % list of transducer separations to calculate for
 
 % ultrasonic burst parameters
 t.min = -10E-6; % allows it to be centred on zero at start
@@ -55,15 +55,15 @@ t.ddt = 0.001E-9; % smallest change in TTD able to measure
 N_interp = ceil(t.dt/t.ddt); % interpolation factor required
 
 % Rays to simulate Parameters(16 total rays possible for each 1 source ray)
-Nperp = 50; % Number of source rays perpendicular to piezo
-Nang = 10; % number of rays angled at each edge of piezo for beam spread
+Nperp = 100; % Number of source rays perpendicular to piezo
+Nang = 25; % number of rays angled at each edge of piezo for beam spread
 g = genGeometry(gInp); % generate temporary geometry for calculation of rays
 [x0, dtheta, A] = genBeam(g, mat, B, Nperp, Nang); % positions, deflections and amplitudes of rays
 
 % flow profile parameters
 initialFlow.profile = @laminar;
 initialFlow.v_ave = 1; % initial value, will cycle through v_ave_list
-initialFlow.N = 1000;
+initialFlow.N = 250;
 initialFlow.n = 7;
 
 % calculate theoretical for plug flow
