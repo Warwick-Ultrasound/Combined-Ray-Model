@@ -27,13 +27,16 @@ function ray = calcFluidRay(startCoords, theta0, flow, g, mat, varargin)
     end
     dy = abs(y_calc(2)-y_calc(1));
 
+    % precalculate vel values for efficiency
+    v_vals = flow.profile(y_calc, g.R, flow.v_ave, n);
+
     % now loop through them calculating x
     x = zeros(size(y_calc));
     x(1) = startCoords(1); % start at correct x location
     for ii = 2:length(y_calc)
         % local velocity
-        v = flow.profile(y_calc(ii), g.R, flow.v_ave, n);
-        theta_f = atand( tand(theta0) + v/(mat.fluid.clong*cosd(theta0)));
+        %v = flow.profile(y_calc(ii), g.R, flow.v_ave, n);
+        theta_f = atand( tand(theta0) + v_vals(ii)/(mat.fluid.clong*cosd(theta0)));
         x(ii) = x(ii-1) + dy*tand(theta_f);
     end
 

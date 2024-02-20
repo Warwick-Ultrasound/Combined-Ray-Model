@@ -1,7 +1,12 @@
-function drawGeometry(g)
-    % Draws the geometry in the input struct for checking.
+function drawGeometry(g, varargin)
+    % Draws the geometry in the input struct for checking. Set 2nd element
+    % to 'off' to not create a new figure.
 
-    figure;
+    if ~isempty(varargin)
+        if varargin ~= "off"
+            figure;
+        end
+    end
     
     % plot pipe boundaries
     yline(g.pipeIntTop/1E-3, 'k--');

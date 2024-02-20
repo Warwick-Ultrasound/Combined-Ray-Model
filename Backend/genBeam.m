@@ -4,7 +4,6 @@ function [x0, dtheta, A] = genBeam(g, mat, B, Np, Nfan)
 
     rp = 100E-3; % distance between sources and calculation path (far field)
     theta_step = 0.1; % angular step size
-    Lp = sqrt(diff(g.piezoLeftBounds.x)^2 + diff(g.piezoLeftBounds.y)^2); % piezo length
 
     % calculate max angle beam goes out to
     A0 = Huygens(g, mat, B, 0, -rp); % straight under rightmost edge at rp

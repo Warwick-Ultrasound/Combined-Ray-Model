@@ -18,16 +18,19 @@ function ray = genArbRay(startCoords, theta, type, material, g, nextBound)
     ray.start = startCoords;
 
     % calculate next intersection point. Ray always travelling to right.
-    f = @(y) (y-c)/m; % inverse equation of ray
     switch nextBound
         case {'pipeExtTop', 'pipeIntTop', 'pipeIntBot', 'pipeExtBot'}
             y = g.(nextBound); % y-value of boundary
-            x = f(y);
+            x = (y-c)/m;
         case 'piezoRight'
-            intersect = @(x) ray.eq(x) - g.piezoRight(x); % minimise this to find where lines meet
-            options = optimoptions(@fsolve, 'Display', 'none');
-            x = fsolve(intersect, g.piezoRightCentre(2), options);
-            y = ray.eq(x);
+
+            % coeffs of right piezo line
+            m2 = g.piezoRight(2)-g.piezoRight(1);
+            c2 = g.piezoRight(0);
+
+            % solution to sim. eqns.
+            x = (c2-c)/(m-m2);
+            y = g.piezoRight(x);
 
             % ensure that this is within piezo bounds
             xOutBounds = x<g.piezoRightBounds.x(1) || x>g.piezoRightBounds.x(2);

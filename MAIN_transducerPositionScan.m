@@ -70,6 +70,10 @@ initialFlow.n = 7;
 theta_f = asind( mat.fluid.clong/mat.transducer.clong * sind(g.thetaT) );
 theoryTTD = 4*(2*g.R)*abs(initialFlow.v_ave)*tand(theta_f)/mat.fluid.clong^2;
 
+% create a directory to output into
+dirName = "Data_"+string(datetime('now', 'Format', 'dd_MM_yy__HH_mm_ss'));
+mkdir(dirName);
+
 % cycle through flow rates
 TTD = nan(length(seps),1); % one for each transducer separation
 pkpk = nan(16, length(seps)); % 1 column per separation, 1 row per pathKey
@@ -120,17 +124,31 @@ for ss = 1:length(seps)
     % calculate theoretical for plug flow
     FPCF(ss) = theoryTTD/TTD(ss); % linear => only need one point to find FPCF
 
+    % plot figure and save in background
+    f = figure('visible', 'off');
+    tiledlayout(2,1);
+    nexttile;
+    drawGeometry(g, 'off');
+    drawAllPaths(Pup);
+    title("Separation = "+string(seps(ss)/1E-3)+" mm");
+    nexttile;
+    plot(time(start:stop)/1E-6, up(start:stop), time(start:stop)/1E-6, down(start:stop));
+    xlabel('Time /\mus');
+    ylabel('Amplitude /arb.');
+    saveas(f, dirName+'\\Sepn_'+string(seps(ss)/1E-3)+"_mm.png");
+
 end
 
 % % draw last calculated set of paths on top of geometry
 % drawGeometry(g);
 % drawAllPaths(Pup);
 
-figure;
+f = figure;
 plot(seps/1E-3, FPCF);
 xline(userSeps/1E-3, 'k-', {'LNNL', 'LLLL', 'SNNS', 'SSSS'});
 xlabel("Transducer Separation /mm");
 ylabel("Hydraulic Correction Factor");
+saveas(f, dirName + '\FPCF.png');
 
 figure;
 bar3(seps/1E-3, pkpk.');
@@ -141,12 +159,16 @@ view(62,18);
 % plot pk-pk of 5 largest contributors
 maxpkpk = max(pkpk, [], 2);
 [~,I] = maxk(maxpkpk, 5);
-figure;
+f = figure;
 plot(seps/1E-3, pkpk(I,:));
 xline(userSeps/1E-3, 'k-', {'LNNL', 'LLLL', 'SNNS', 'SSSS'});
 legend(pathKeys(I));
 xlabel('Separation /mm');
 ylabel('Peak to Peak Ampltiude /arb.');
+saveas(f, dirName + '\max_pkpk_top5.png');
+
+% save workspace to record all params and most output numerically
+save(dirName + '\workspace');
 
 findfigs;
 toc;
