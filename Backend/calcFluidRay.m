@@ -30,21 +30,14 @@ function ray = calcFluidRay(startCoords, theta0, flow, g, mat, varargin)
     % precalculate vel values for efficiency
     v_vals = flow.profile(y_calc, g.R, flow.v_ave, n);
 
+    % precalculate theta_f for efficiency
+    theta_f = atand( tand(theta0) + v_vals/(mat.fluid.clong*cosd(theta0)));
+
     % now loop through them calculating x
     x = zeros(size(y_calc));
     x(1) = startCoords(1); % start at correct x location
     for ii = 2:length(y_calc)
-        % local velocity
-        %v = flow.profile(y_calc(ii), g.R, flow.v_ave, n);
-        theta_f = atand( tand(theta0) + v_vals(ii)/(mat.fluid.clong*cosd(theta0)));
-        x(ii) = x(ii-1) + dy*tand(theta_f);
-    end
-
-    % find total distance travelled
-    ray.d = 0;
-    for ii = 1:length(x)-1
-        dx = x(ii+1)-x(ii);
-        ray.d = ray.d + sqrt(dx^2 + dy^2);
+        x(ii) = x(ii-1) + dy*tand(theta_f(ii));
     end
 
     % construct ray struct

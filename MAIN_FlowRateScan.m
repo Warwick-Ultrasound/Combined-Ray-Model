@@ -7,6 +7,8 @@ clear;
 clc;
 close all;
 
+tic;
+
 % add backend to path
 addpath('Backend');
 
@@ -51,10 +53,14 @@ B = genBurst(time, f0, BW);
 g = genGeometry(gInp);
 
 % draw it to check
+figure;
 drawGeometry(g);
 
-% generate x locations along piezo
-x0 = linspace(g.piezoLeftBounds.x(1), g.piezoLeftBounds.x(2), Ns);
+% Rays to simulate Parameters(16 total rays possible for each 1 source ray)
+Nperp = 3; % Number of source rays perpendicular to piezo
+Nang = 3; % number of rays angled at each edge of piezo for beam spread
+g = genGeometry(gInp); % generate temporary geometry for calculation of rays
+[x0, dtheta, A] = genBeam(g, mat, B, Nperp, Nang); % positions, deflections and amplitudes of rays
 
 % cycle through flow rates
 TTD = nan(size(flow.v_ave_list));
@@ -66,17 +72,17 @@ for ff = 1:length(flow.v_ave_list)
     flow.v_ave = flow.v_ave_list(ff);
 
     % create the paths
-    Pdown = cell(16, Ns); % one column per source ray
+    Pdown = cell(16, length(x0)); % one column per source ray
     Pup = cell(size(Pdown));
-    for ii = 1:Ns
-        paths = genAllPaths(g, mat, x0(ii), B, flow);
+    for ii = 1:length(x0)
+        paths = genAllPaths(g, mat, x0(ii), B, flow, dtheta(ii), A(ii));
         for jj = 1:16
             Pdown{jj,ii} = paths{jj};
         end
     end
     flow.v_ave = -flow.v_ave; % switch flow to other direction
-    for ii = 1:Ns
-        paths = genAllPaths(g, mat, x0(ii), B, flow);
+    for ii = 1:length(x0)
+        paths = genAllPaths(g, mat, x0(ii), B, flow, dtheta(ii), A(ii));
         for jj = 1:16
             Pup{jj,ii} = paths{jj};
         end
@@ -92,14 +98,16 @@ for ff = 1:length(flow.v_ave_list)
 end
 
 % draw last calculated path 
-for ii = 1:Ns
+for ii = 1:length(x0)
     for jj = 1:16
         path = Pup{jj,ii};
-        if path.detected
+        %if path.detected
             drawPath(path);
-        end
+        %end
     end
 end
+box on;
+
 
 % plot last caculated pair of waveforms
 figure;
@@ -132,5 +140,7 @@ mConvModel = vals(1);
 clear vals;
 FPCF = mConvModel/mRayModel;
 disp('Correction Factor is '+string(FPCF));
+
+toc;
 
 findfigs;

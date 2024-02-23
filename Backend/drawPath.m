@@ -18,7 +18,9 @@ function drawPath(path)
 
         % draw ray
         if isfield(rays{ii}, 'eq') % straight ray
+            hold on;
             drawRay(rays{ii}, lineSpec);
+            hold off;
 
         elseif isfield(rays{ii}, 'coords')
             hold on;

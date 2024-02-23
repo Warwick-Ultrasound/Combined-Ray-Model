@@ -125,30 +125,29 @@ for ss = 1:length(seps)
     FPCF(ss) = theoryTTD/TTD(ss); % linear => only need one point to find FPCF
 
     % plot figure and save in background
-    f = figure('visible', 'off');
-    tiledlayout(2,1);
-    nexttile;
+    figure('visible', 'off');
     drawGeometry(g, 'off');
     drawAllPaths(Pup);
     title("Separation = "+string(seps(ss)/1E-3)+" mm");
-    nexttile;
+    %saveas(f, dirName+'\\Sepn_'+string(seps(ss)/1E-3)+"_mm_geom.pdf");
+    print(dirName+'\\Sepn_'+string(seps(ss)/1E-3)+"_mm_geom.pdf", '-dpdf', '-bestfit');
+
+    figure('visible', 'off');
     plot(time(start:stop)/1E-6, up(start:stop), time(start:stop)/1E-6, down(start:stop));
     xlabel('Time /\mus');
     ylabel('Amplitude /arb.');
-    saveas(f, dirName+'\\Sepn_'+string(seps(ss)/1E-3)+"_mm.png");
+    title("Separation = "+string(seps(ss)/1E-3)+" mm");
+    %saveas(f, dirName+'\\Sepn_'+string(seps(ss)/1E-3)+"_mm_sig.pdf");
+    print(dirName+'\\Sepn_'+string(seps(ss)/1E-3)+"_mm_sig.pdf", '-dpdf', '-bestfit');
 
 end
 
-% % draw last calculated set of paths on top of geometry
-% drawGeometry(g);
-% drawAllPaths(Pup);
-
-f = figure;
+figure;
 plot(seps/1E-3, FPCF);
 xline(userSeps/1E-3, 'k-', {'LNNL', 'LLLL', 'SNNS', 'SSSS'});
 xlabel("Transducer Separation /mm");
 ylabel("Hydraulic Correction Factor");
-saveas(f, dirName + '\FPCF.png');
+print(dirName + '\FPCF.pdf', '-dpdf', '-bestfit');
 
 figure;
 bar3(seps/1E-3, pkpk.');
@@ -165,9 +164,10 @@ xline(userSeps/1E-3, 'k-', {'LNNL', 'LLLL', 'SNNS', 'SSSS'});
 legend(pathKeys(I));
 xlabel('Separation /mm');
 ylabel('Peak to Peak Ampltiude /arb.');
-saveas(f, dirName + '\max_pkpk_top5.png');
+print(dirName + '\max_pkpk_top5.pdf', '-dpdf', '-bestfit');
 
 % save workspace to record all params and most output numerically
+clear f; % don't include figure in saved workspace
 save(dirName + '\workspace');
 
 findfigs;
