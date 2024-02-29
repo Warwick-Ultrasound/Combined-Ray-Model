@@ -20,8 +20,8 @@ mat.outside = air;
 mat.coupling = 'rigid';
 
 % define geometry
-gInp.R = 50E-3;
-gInp.thick = 3E-3;
+gInp.R = 26.8E-3;
+gInp.thick = 4.7E-3;
 gInp.thetaT = 38;
 gInp.hp = 15E-3;
 gInp.Lp = 10E-3;
@@ -32,8 +32,8 @@ SSSSsep = transducerPositionCalc(gInp, mat, 'SSSS');
 userSeps = [LNNLsep, LLLLsep, SNNSsep, SSSSsep]; % separations that the user may select
 gInp.sep = SNNSsep; % pick one that will always be non-nan for initial setup.
 minSep = min(userSeps)-15E-3; % smaller than smallest user separation
-maxSep = max(userSeps)+15E-3;
-seps = linspace(minSep, maxSep, 300); % list of transducer separations to calculate for
+maxSep = max(userSeps)+20E-3;
+seps = linspace(minSep, maxSep, 100); % list of transducer separations to calculate for
 
 % ultrasonic burst parameters
 t.min = -10E-6; % allows it to be centred on zero at start
@@ -51,11 +51,11 @@ time = linspace(t.min, t.max, t.len);
 B = genBurst(time, f0, BW);
 
 % timing precsion
-t.ddt = 0.001E-9; % smallest change in TTD able to measure
+t.ddt = 0.01E-9; % smallest change in TTD able to measure
 N_interp = ceil(t.dt/t.ddt); % interpolation factor required
 
 % Rays to simulate Parameters(16 total rays possible for each 1 source ray)
-Nperp = 100; % Number of source rays perpendicular to piezo
+Nperp = 50; % Number of source rays perpendicular to piezo
 Nang = 25; % number of rays angled at each edge of piezo for beam spread
 g = genGeometry(gInp); % generate temporary geometry for calculation of rays
 [x0, dtheta, A] = genBeam(g, mat, B, Nperp, Nang); % positions, deflections and amplitudes of rays
@@ -66,18 +66,23 @@ initialFlow.v_ave = 1; % initial value, will cycle through v_ave_list
 initialFlow.N = 250;
 initialFlow.n = 7;
 
+% measurement of incient amplitude on piezo
+Nbins = 15;
+Abinned = nan(length(seps), Nbins);
+
 % calculate theoretical for plug flow
 theta_f = asind( mat.fluid.clong/mat.transducer.clong * sind(g.thetaT) );
 theoryTTD = 4*(2*g.R)*abs(initialFlow.v_ave)*tand(theta_f)/mat.fluid.clong^2;
 
 % create a directory to output into
-dirName = "Data_"+string(datetime('now', 'Format', 'dd_MM_yy__HH_mm_ss'));
+dirName = "Data\Data_"+string(datetime('now', 'Format', 'dd_MM_yy__HH_mm_ss'));
 mkdir(dirName);
 
-% cycle through flow rates
+% cycle transducer positions
 TTD = nan(length(seps),1); % one for each transducer separation
 pkpk = nan(16, length(seps)); % 1 column per separation, 1 row per pathKey
 FPCF = nan(length(seps),1);
+pkpk_tot = nan(length(seps), 1); % total signal amplitude at each separation from summed waveforms
 for ss = 1:length(seps)
 
     % progress indicator
@@ -109,17 +114,43 @@ for ss = 1:length(seps)
     end
 
     % calculate received signals
-    up = receivedSignal(Pup);
+    [up, detectionPoints, Arec] = receivedSignal(Pup);
     down = receivedSignal(Pdown);
+
+    % add to Abinned to see where energy is incident on piezo
+    Abinned(ss,:) = receivedSignalHist(g, detectionPoints, Arec, Nbins);
 
     % measure TTD
     [start, stop] = arrival_detect(up, 1); % detect location of arrival
-    TTD(ss) = flow_process_SG_filt(up, down, time, N_interp, start, stop);
+    [TTD(ss), pkpk_tot(ss)] = flow_process_SG_filt(up, down, time, N_interp, start, stop);
 
     % Analyse where the contributions come from - doesn't matter which flow
     % rate, so just do last one
-
     [pathKeys, pkpk(:,ss)] = pathAnalyser(Pup, 0);
+
+    % calculate and plot signals from LNNL and LLLL paths
+    LLLLsig = zeros(size(Pup{1,1}.burst));
+    LNNLsig = zeros(size(LLLLsig));
+    for ii = 1:size(Pup,1)
+        for jj = 1:size(Pup,2)
+            if Pup{ii,jj}.detected
+                if Pup{ii,jj}.pathKey == "LNNL"
+                    LNNLsig = LNNLsig + Pup{ii,jj}.burst;
+                elseif Pup{ii,jj}.pathKey == "LLLL"
+                    LLLLsig = LLLLsig + Pup{ii,jj}.burst;
+                end
+            end
+        end
+    end
+    figure('visible', 'off');
+    plot(time(start:stop)/1E-6, LNNLsig(start:stop), time(start:stop)/1E-6, LLLLsig(start:stop));
+    hold on;
+    plot(time(start:stop)/1E-6, LNNLsig(start:stop)+LLLLsig(start:stop), 'k--');
+    legend('LNNL', 'LLLL', 'LNNL+LLLL');
+    xlabel('Time /\mus');
+    ylabel('Amplitude /arb.');
+    title("Separation = "+string(seps(ss)/1E-3)+" mm");
+    print(dirName+'\\Sepn_'+string(seps(ss)/1E-3)+"_mm_sigBreakdown.pdf", '-dpdf', '-bestfit');
 
     % calculate theoretical for plug flow
     FPCF(ss) = theoryTTD/TTD(ss); % linear => only need one point to find FPCF
@@ -129,7 +160,6 @@ for ss = 1:length(seps)
     drawGeometry(g, 'off');
     drawAllPaths(Pup);
     title("Separation = "+string(seps(ss)/1E-3)+" mm");
-    %saveas(f, dirName+'\\Sepn_'+string(seps(ss)/1E-3)+"_mm_geom.pdf");
     print(dirName+'\\Sepn_'+string(seps(ss)/1E-3)+"_mm_geom.pdf", '-dpdf', '-bestfit');
 
     figure('visible', 'off');
@@ -137,14 +167,17 @@ for ss = 1:length(seps)
     xlabel('Time /\mus');
     ylabel('Amplitude /arb.');
     title("Separation = "+string(seps(ss)/1E-3)+" mm");
-    %saveas(f, dirName+'\\Sepn_'+string(seps(ss)/1E-3)+"_mm_sig.pdf");
     print(dirName+'\\Sepn_'+string(seps(ss)/1E-3)+"_mm_sig.pdf", '-dpdf', '-bestfit');
 
 end
 
+% sometimes, some of the paths not possible => don't plot their distances
+nonNaN = ~isnan(userSeps);
+userSepsKeys = {'LNNL', 'LLLL', 'SNNS', 'SSSS'};
+
 figure;
 plot(seps/1E-3, FPCF);
-xline(userSeps/1E-3, 'k-', {'LNNL', 'LLLL', 'SNNS', 'SSSS'});
+xline(userSeps(nonNaN)/1E-3, 'k-', userSepsKeys(nonNaN));
 xlabel("Transducer Separation /mm");
 ylabel("Hydraulic Correction Factor");
 print(dirName + '\FPCF.pdf', '-dpdf', '-bestfit');
@@ -158,16 +191,39 @@ view(62,18);
 % plot pk-pk of 5 largest contributors
 maxpkpk = max(pkpk, [], 2);
 [~,I] = maxk(maxpkpk, 5);
-f = figure;
-plot(seps/1E-3, pkpk(I,:));
-xline(userSeps/1E-3, 'k-', {'LNNL', 'LLLL', 'SNNS', 'SSSS'});
-legend(pathKeys(I));
+% if any row contains all zeros, remove it.
+plotLines = pkpk(I,:);
+remList = []; % list of indicies to remove
+for ii = 1:length(I)
+    if all(plotLines(ii,:) == 0)
+        remList(end+1) = ii; % remove from I
+    end
+end
+I(remList) = [];
+plotLines = pkpk(I,:);
+% plot
+figure;
+plot(seps/1E-3, plotLines);
+hold on;
+plot(seps/1E-3, pkpk_tot, 'k--');
+xline(userSeps(nonNaN)/1E-3, 'k-', userSepsKeys(nonNaN));
+leg = pathKeys(I);
+leg(end+1) = 'Received Amplitude';
+legend(leg);
 xlabel('Separation /mm');
 ylabel('Peak to Peak Ampltiude /arb.');
 print(dirName + '\max_pkpk_top5.pdf', '-dpdf', '-bestfit');
 
+% plot amplitude into each bin on the piezo
+L = linspace(0, gInp.Lp, Nbins); % NOTE: approximate only - slight shift
+figure;
+surf(seps/1E-3, L/1E-3, Abinned.', 'EdgeColor', 'none');
+xlabel('Separation /mm');
+ylabel('Length along piezo /mm');
+zlabel('Amplitude in bin /arb.');
+zlim([0, max(Abinned, [], 'all')]);
+
 % save workspace to record all params and most output numerically
-clear f; % don't include figure in saved workspace
 save(dirName + '\workspace');
 
 findfigs;

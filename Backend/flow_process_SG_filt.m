@@ -1,4 +1,4 @@
-function [dts, corr_x, corr, arr1_filt, arr2_filt] = flow_process_SG_filt(upvolts, downvolts, time, N_interp, up_is, down_is)
+function [dts, pkpk] = flow_process_SG_filt(upvolts, downvolts, time, N_interp, up_is, down_is)
 
 %     [dts, corr_x, corr] = flow_process_SG_filt(upvolts, downvolts, time, N_interp, up_is, down_is)
 %     Function to process flow data. 
@@ -52,10 +52,8 @@ function [dts, corr_x, corr, arr1_filt, arr2_filt] = flow_process_SG_filt(upvolt
         arr1_int = spline(t_crop, arr1_filt, time_int);
         arr2_int = spline(t_crop, arr2_filt, time_int);
 
-%         figure;
-%         plot(arr1_int);
-%         hold on;
-%         plot(arr2_int);
+        % peak to peak of interpolated signal
+        pkpk = max(arr1_int) - min(arr1_int);
 
         %cross correlate
         [corr, corr_i] = xcorr(arr1_int, arr2_int);

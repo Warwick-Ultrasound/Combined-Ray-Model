@@ -69,4 +69,5 @@ function [pathKeys, pkpk2] = pathAnalyser(paths, display)
         ylabel('pk-pk of summed contributions /arb.');
         title('pk-pk of summed signal', 'Does take into account the phase');
     end
+
 end
