@@ -142,7 +142,7 @@ for ss = 1:length(seps)
             end
         end
     end
-    figure('visible', 'off');
+    fig = figure('visible', 'off');
     plot(time(start:stop)/1E-6, LNNLsig(start:stop), time(start:stop)/1E-6, LLLLsig(start:stop));
     hold on;
     plot(time(start:stop)/1E-6, LNNLsig(start:stop)+LLLLsig(start:stop), 'k--');
@@ -151,23 +151,26 @@ for ss = 1:length(seps)
     ylabel('Amplitude /arb.');
     title("Separation = "+string(seps(ss)/1E-3)+" mm");
     print(dirName+'\\Sepn_'+string(seps(ss)/1E-3)+"_mm_sigBreakdown.pdf", '-dpdf', '-bestfit');
+    close(fig);
 
     % calculate theoretical for plug flow
     FPCF(ss) = theoryTTD/TTD(ss); % linear => only need one point to find FPCF
 
     % plot figure and save in background
-    figure('visible', 'off');
+    fig = figure('visible', 'off');
     drawGeometry(g, 'off');
     drawAllPaths(Pup);
     title("Separation = "+string(seps(ss)/1E-3)+" mm");
     print(dirName+'\\Sepn_'+string(seps(ss)/1E-3)+"_mm_geom.pdf", '-dpdf', '-bestfit');
+    close(fig);
 
-    figure('visible', 'off');
+    fig = figure('visible', 'off');
     plot(time(start:stop)/1E-6, up(start:stop), time(start:stop)/1E-6, down(start:stop));
     xlabel('Time /\mus');
     ylabel('Amplitude /arb.');
     title("Separation = "+string(seps(ss)/1E-3)+" mm");
     print(dirName+'\\Sepn_'+string(seps(ss)/1E-3)+"_mm_sig.pdf", '-dpdf', '-bestfit');
+    close(fig);
 
 end
 
