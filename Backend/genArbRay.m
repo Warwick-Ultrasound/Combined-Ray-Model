@@ -22,6 +22,7 @@ function ray = genArbRay(startCoords, theta, type, material, g, nextBound)
         case {'pipeExtTop', 'pipeIntTop', 'pipeIntBot', 'pipeExtBot'}
             y = g.(nextBound); % y-value of boundary
             x = (y-c)/m;
+
         case 'piezoRight'
 
             % coeffs of right piezo line
@@ -40,6 +41,8 @@ function ray = genArbRay(startCoords, theta, type, material, g, nextBound)
                 x = nan;
                 y = nan;
             end
+
     end
     ray.stop = [x,y];
+
 end

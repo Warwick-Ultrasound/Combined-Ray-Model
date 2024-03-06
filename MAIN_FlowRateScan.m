@@ -17,11 +17,8 @@ gInp.R = 50E-3;
 gInp.thick = 3E-3;
 gInp.thetaT = 38;
 gInp.hp = 15E-3;
-gInp.Lp = 20E-3;
-gInp.sep = 99E-3;
-
-% Number of source rays (16 total rays possible for each 1 source ray)
-Ns = 10;
+gInp.Lp = 10E-3;
+gInp.sep = 100E-3; % recalculate this later, just temp value to prevent an error
 
 % define materials
 run materials.m; % imports material structs
@@ -30,6 +27,9 @@ mat.transducer = PEEK;
 mat.fluid = water;
 mat.outside = air;
 mat.coupling = 'rigid';
+
+% calculate transducer separation
+gInp.sep = transducerPositionCalc(gInp, mat, 'LNNL');
 
 % ultrasonic burst parameters
 t.min = -10E-6; % allows it to be centred on zero at start
@@ -41,8 +41,8 @@ BW = 30; % bandwidth (% of f0) - note full window width not half-height
 % flow profile parameters
 flow.profile = @laminar;
 flow.v_ave = 0; % initial value, will cycle through v_ave_list
-flow.v_ave_list = linspace(0,1,10); % list of flow rates to cycle through
-flow.N = 500;
+flow.v_ave_list = linspace(0,0.1,2); % list of flow rates to cycle through
+flow.N = 2000;
 flow.n = 7;
 
 % generate burst
@@ -57,16 +57,17 @@ figure;
 drawGeometry(g);
 
 % Rays to simulate Parameters(16 total rays possible for each 1 source ray)
-Nperp = 3; % Number of source rays perpendicular to piezo
-Nang = 3; % number of rays angled at each edge of piezo for beam spread
-g = genGeometry(gInp); % generate temporary geometry for calculation of rays
+Nperp = 1000; % Number of source rays perpendicular to piezo
+Nang = 1; % number of rays angled at each edge of piezo for beam spread
 [x0, dtheta, A] = genBeam(g, mat, B, Nperp, Nang); % positions, deflections and amplitudes of rays
+dtheta = zeros(size(dtheta)); % NOTE REMOVE THIS - TURNS OFF BEAM SPREAD
 
 % cycle through flow rates
 TTD = nan(size(flow.v_ave_list));
 for ff = 1:length(flow.v_ave_list)
+
     % progress indicator
-    disp(string(ff/length(flow.v_ave_list)*100)+"% done");
+    disp(string((ff-1)/length(flow.v_ave_list)*100)+"% done");
 
     % set flow rate
     flow.v_ave = flow.v_ave_list(ff);
@@ -93,21 +94,24 @@ for ff = 1:length(flow.v_ave_list)
     down = receivedSignal(Pdown);
 
     % measure TTD
-    TTD(ff) = flow_process_SG_filt(up, down, time, 100, 1, length(time));
+    [start, stop] = arrival_detect(up, 1);
+    TTD(ff) = flow_process_SG_filt(up, down, time, 100, start, stop);
     
 end
 
 % draw last calculated path 
-for ii = 1:length(x0)
-    for jj = 1:16
-        path = Pup{jj,ii};
-        %if path.detected
-            drawPath(path);
-        %end
+for ii = 1:10:length(x0)
+    disp(ii);
+    if dtheta(ii) == 0 % only plot normal rays for speed
+        for jj = 1:16
+            path = Pup{jj,ii};
+            if path.detected && path.pathKey=="LNNL"
+                drawPath(path);
+            end
+        end
     end
 end
 box on;
-
 
 % plot last caculated pair of waveforms
 figure;
@@ -142,5 +146,4 @@ FPCF = mConvModel/mRayModel;
 disp('Correction Factor is '+string(FPCF));
 
 toc;
-
 findfigs;
