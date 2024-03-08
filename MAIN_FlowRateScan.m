@@ -57,8 +57,8 @@ figure;
 drawGeometry(g);
 
 % Rays to simulate Parameters(16 total rays possible for each 1 source ray)
-Nperp = 1000; % Number of source rays perpendicular to piezo
-Nang = 1; % number of rays angled at each edge of piezo for beam spread
+Nperp = 10; % Number of source rays perpendicular to piezo
+Nang = 5; % number of rays angled at each edge of piezo for beam spread
 [x0, dtheta, A] = genBeam(g, mat, B, Nperp, Nang); % positions, deflections and amplitudes of rays
 dtheta = zeros(size(dtheta)); % NOTE REMOVE THIS - TURNS OFF BEAM SPREAD
 
@@ -105,7 +105,7 @@ for ii = 1:10:length(x0)
     if dtheta(ii) == 0 % only plot normal rays for speed
         for jj = 1:16
             path = Pup{jj,ii};
-            if path.detected && path.pathKey=="LNNL"
+            if path.detected
                 drawPath(path);
             end
         end

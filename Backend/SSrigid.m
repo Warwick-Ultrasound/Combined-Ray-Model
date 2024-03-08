@@ -71,5 +71,5 @@ function [A, theta] = SSrigid(m1, m2, theta0, f, inType)
     % solve M*A = x for A, the array of amplitudes
     A = M\x;
 
-    A = abs(A);
+    %A = abs(A);
 end

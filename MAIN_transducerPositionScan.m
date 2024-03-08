@@ -33,7 +33,7 @@ userSeps = [LNNLsep, LLLLsep, SNNSsep, SSSSsep]; % separations that the user may
 gInp.sep = SNNSsep; % pick one that will always be non-nan for initial setup.
 minSep = min(userSeps)-15E-3; % smaller than smallest user separation
 maxSep = max(userSeps)+20E-3;
-seps = linspace(minSep, maxSep, 100); % list of transducer separations to calculate for
+seps = linspace(minSep, maxSep, 50); % list of transducer separations to calculate for
 
 % ultrasonic burst parameters
 t.min = -10E-6; % allows it to be centred on zero at start
@@ -56,7 +56,7 @@ N_interp = ceil(t.dt/t.ddt); % interpolation factor required
 
 % Rays to simulate Parameters(16 total rays possible for each 1 source ray)
 Nperp = 50; % Number of source rays perpendicular to piezo
-Nang = 25; % number of rays angled at each edge of piezo for beam spread
+Nang = 15; % number of rays angled at each edge of piezo for beam spread
 g = genGeometry(gInp); % generate temporary geometry for calculation of rays
 [x0, dtheta, A] = genBeam(g, mat, B, Nperp, Nang); % positions, deflections and amplitudes of rays
 
