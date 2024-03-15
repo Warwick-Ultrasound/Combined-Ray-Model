@@ -55,7 +55,7 @@ function [A, theta] = LSboundary(m1, m2, theta0, f)
     A = M\x;
 
     % ensure A = 0 when beyond critical angle
-    A(real(theta)==90) = 0; m
+    A(real(theta)==90) = 0;
 
 end
    
