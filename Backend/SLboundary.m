@@ -63,7 +63,8 @@ function [A, theta] = SLboundary(m1, m2, theta0, f, inType)
     % solve M*A = x for A, the array of amplitudes
     A = M\x;
 
-    %A = abs(A);
+    % ensure A = 0 when beyond critical angle
+    A(real(theta)==90) = 0; 
 
 end
    

@@ -78,6 +78,7 @@ function [A, theta] = SSslip(m1, m2, theta0, f, inType)
     for ii = 1:4
         if ~isreal(theta(ii))
             theta(ii) = nan; % if turned out imag, are beyond critical angle.
+            A(ii) = 0; % 0 if beyond critical angle
         end
     end
 
