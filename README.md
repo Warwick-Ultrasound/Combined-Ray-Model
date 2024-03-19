@@ -6,6 +6,7 @@ This is a model of a V-mode clamp-on flow meter. It uses ray tracing with many r
 
 This README will first go over some of the key information about the model. Then, a description of the MAIN scripts and their purpose will be provided. Finally, a description of the back end will be provided in case you need to modify anything. 
 
+---
 ### Key Information
 
 - The model allows for a maximum of two transits through the upper pipe wall and two in the bottom wall. The path that a particular ray has taken through the system is indicated by a 4-letter string, indicating the wave mode in each wall transit, in the order that the ultrasound encounters them. For example, LSSL is a path which is longitudinal in both top wall transits and shear in both bottom wall transits. SNNS is a path which is shear in both top wall transits and does not enter the bottom wall, since it reflects off the inner surface of the pipe.
@@ -24,6 +25,7 @@ This README will first go over some of the key information about the model. Then
 
 [3] G. J. Kuhn, A. Lutsch, Elastic Wave Mode Conversion at a Solid-Solid Boundary with Transverse Slip, The Journal of the Acoustical Society of America 33 (7) (2005) 949–954. doi:10.1121/1.1908861.
 
+---
 ## MAIN Scripts
 
 A selection of main scripts have been provided which investigate different aspects of the clamp-on meter. 
@@ -60,13 +62,15 @@ The purpose of this script is to tell you which paths the ultrasound is taking t
 
 This script fixes the OD of the pipe and scans the wall thickness between two predefined values. At each wall thickness, it places the transducers to receive the SNNS path and measures the signal contributions from the LNNL and SNNS paths. Then it repeats the same calculation at the correct position for the LNNL path. It also measures the TTD at both locations and uses them to calculate the error introduced by having the transducers in the wrong location. It plots the error as a function of pipe wall thickness.
 
-## Back End Functions
+---
+## Back End
 
 The following is a brief description of the purpose of each function in the back end to give an idea of how the model works. First, the various data structures that are used will be laid out, then the functions which transform them will be detailed. Further information can be found in each of the functions, which are commented and should be relatively readable.
 
 ### Data Structures
 
 **path structure**
+
 A path is a struct which represents a complete path through the system from one transducer to the other (or it might miss). It has fields:
 - rays: Another struct showing the exact path the meter took through the system (see below)
 - detected: A bool showing whether or not the path intersects with the reception piezoelectric
@@ -77,9 +81,11 @@ A path is a struct which represents a complete path through the system from one 
 - pk_pk: The peak-to-peak amplitude of the burst field
 
 **rays**
+
 A cell array, with each cell containing the transit through a single material in the form of a single "ray" struct.
 
 **ray**
+
 A struct containing a single transit through a single material. These are stacked into 'rays' cell arrays, then into paths structs to map out a full path. A ray has fields:
 - start: the starting location of the ray
 - eq: A function handle for the equation of the ray
@@ -89,6 +95,7 @@ A struct containing a single transit through a single material. These are stacke
 For a ray in the water, the path is curved. So, rather than specifying a function handle 'eq', a field called 'coords' is specified which contains the x, y coordinates of the path.
 
 **materials**
+
 A struct containing all of the materials information for the model. It has fields:
 - pipe: material struct for pipe material
 - transducer: The same for the transducer wedge material
@@ -97,6 +104,7 @@ A struct containing all of the materials information for the model. It has field
 - coupling: can be 'rigid' or 'slip' - see description of boundaries above
 
 **gInp**
+
 This is the geometry input struct, which is used to create an internal geometry object which maps out all of the meter boundaries. It has fields:
 - R: internal pipe radius
 - thick: wall thickness
@@ -105,14 +113,8 @@ This is the geometry input struct, which is used to create an internal geometry 
 - Lp: length of piezoelectric
 - sep: transducer separation. Measured between piezo centre points
 
-**flow**
-A struct representing the flow through the pipe. Has fields:
-- profile: A function handle for generating the local velocity at a point in the pipe
-- v_ave: average velocity ver the pipe cross-section
-- N: how many points to sample at during each transit through the fluid
-- n: The order of the turbulent profile. If not using, set it to any number
-
 **geom**
+
 An internally generated struct which contains all of the information required to run the model. It contains the boundaries in the internal coordinate system from gInp using the function genGeometry. It has fields:
 - pipeExtTop: y-location of exterior of top wall
 - pipeIntTop: y-location of interior of top wall
@@ -127,4 +129,131 @@ An internally generated struct which contains all of the information required to
 - piezoRightBounds: A struct with x and y fields containing the endpoints of the right piezo
 - thetaT: the transducer wedge angle
 
+**flow**
 
+A struct representing the flow through the pipe. Has fields:
+- profile: a function handle for generating the local velocity at a point in the pipe
+- v_ave: average velocity ver the pipe cross-section
+- N: how many points to sample at during each transit through the fluid
+- n: The order of the turbulent profile. If not using, set it to any number
+
+**burst**
+
+A struct representing the ultrasonic burst at the start of the simulation. It is generated by genBurst. It contains fields:
+- t: the time array
+- y: the amplitude values
+- f0: centre frequency
+- BW: bandwidth percentage (as defined below in genBurst)
+
+### Back End Functions
+
+**c_PEEK, c_PEEK_shear, c_water**
+
+These functions take the temperature in degrees Celsius and return the speed of sound in PEEK or water as per the function name.
+
+**plug, laminar, turbulent, zero**
+
+These are functions which represent the different flow profiles that can be used. They take as arguments:
+- r: radial coordinate (number or array)
+- R: internal radius of pipe
+- v_ave: average flow velocity over pipe cross-section
+- n: turbulent profile order
+They return a vector the same size as r containing the flow velocity at the requested radial coordinates.
+
+**LSboundary, SLboundary, SSrigid, SSslip**
+
+These functions perform the calculations to work out the effects of the different boundaries in the system on the ray and the signal. The first letter is medium 1, 2nd letter is medium 2. The SS boundary has two options: one for the slip boundary condition and one for the rigid boundary condition. They take as arguments:
+- m1: medium 1, specified as a material struct
+- m2: medium 2, specified as a material struct
+- theta0: the angle of incidence into the boundary
+- f: the centre frequency of the inbound wave
+- inType: 'L' or 'S' to indicate longitudinal or shear incidence
+The output is [A, theta], where:
+- A: A vector of amplitudes if the incidence amplitude was 1. [RL, RS, TL, TS] where R = reflected, T = transmitted, L = longitudinal, S = shear
+- theta: Angles of reflection/refraction in the same order as A
+
+**genBurst**
+
+Generates a wave burst to represent the wave emitted from the generation piezoelectric. All rays will start with this burst before the modifications are applied as they travel through the system. It takes inputs:
+- t: the time array
+- f0: centre frequency of burst
+- BW: percentage bandwidth (NOTE: this si not the FWHM of the spectrum, but the full window width of a hanging window in the frequency domain)
+The output is a burst struct containing the burst information.
+
+**genGeometry**
+
+Takes the geometry input struct and calculates the geometry of the entire meter. Returns a geom struct.
+
+**transducerPositionCalc**
+
+Calculates the transducer separation that would expect to use for a particular path through the system. Takes as inputs:
+- gInp: the geometry input struct
+- mat: the materials struct
+- pathKey: a 4-letter string describing the path that should be used to calculate the separation
+It then outputs the transducer separation.
+
+**genBeam**
+
+Calculates parameters describing the ultrasonic beam so that the rest of the model knows which rays to simulate. The inputs are:
+- g: geometry struct
+- mat: materials struct
+- B: burst struct
+- Nperp: number of locations along piezo to place rays at
+- Nang: number of rays in the fan at each of the Nperp locations
+Returns:
+- x0: x-locations of ray starting positions
+- dtheta: deflection angles from the piezo-normal
+- A: relative amplitudes of starting rays (currently just set to ones, but can implement if needed)
+
+**genRay**
+
+Used for generating the rays coming from the generation piezoelectric. Takes as inputs:
+- g: geometry struct
+- mat: materials struct
+- x0: x-location at which to start the ray
+- dtheta: deflection angle away from the piezo-normal (optional, defaults to zero)
+Outputs a ray struct representing the first ray in the path
+
+**genArbRay**
+
+Used to generate a ray starting at any location with a given angle to the vertical. This function is used internally to generate almost all of the rays through the system. The inputs are:
+- startCoords: (x,y) containing starting coordinates of ray
+- theta: angle to vertical
+- type: 'L' or 'S' for longitudinal or shear wave ray
+- material: material struct for the material the ray is in
+- g: geometry struct
+- nextBound: string representing the name of the next boundary you expect the ray to encounter for calculation of the endpoint. Valid options are:
+    - pipeExtTop: top wall, exterior surface
+    - pipeIntTop: top wall, interior surface
+    - pipeIntBot: bottom wall, interior surface
+    - pipeExtBot: bottom wall, exterior surface
+    - piezoRight: the reception piezoelectric
+The output is the requested ray structure
+
+**transit**
+
+A function which modifies a burst to simulate the effect of transiting through a given material, including both the time delay and attenuation (if parameters inputted). It operates in the frequency domain and is called multiple times, so rather than inputting and outputting time domain signals it just leaves everything in the frequency domain for speed. The inputs are:
+- ray: ray struct for the section of path that the ultrasound is travelling through
+- freq: the frequency array of the spectrum
+- spect: the spectrum of the signal to modify
+The output is a modified spectrum.
+
+**impossiblePath**
+
+Returns a path structure that indicates internally that the path requested is not possible. This could be, for example, because the angle of incidence is beyond the critical angle. The inputs are:
+- time: the time array
+- pathKey: the 4-letter path descriptor
+- Nrays: the number of rays that should be in the path
+- x0: the x-location that the first ray started at
+The output is a path struct in which each ray is set to nan, the detected property is false, and the burst and peak-to-peak properties are set to zero. This means it cannot be counted in anything going forward.
+
+**calcFluidRay**
+
+Generates the curved ray through the fluid given a flow profile. The inputs are:
+- startCoords: the coordinates at which the ray enters the fluid
+- theta0: angle of refraction into stationary water
+- flow: flow struct
+- g: geometry struct
+- mat: materials struct
+- n: (optional) turbulent profile order
+The output is the ray that gets added to the path struct.
