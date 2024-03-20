@@ -257,3 +257,66 @@ Generates the curved ray through the fluid given a flow profile. The inputs are:
 - mat: materials struct
 - n: (optional) turbulent profile order
 The output is the ray that gets added to the path struct.
+
+**createPath**
+
+Generates a path through the system given the inputs and returns the path struct. The inputs are:
+- g: geometry struct
+- mat: materials struct
+- x0: starting x-location on generation piezo
+- pathKey: identifies which path ultrasound should take
+- B: burst struct
+- flow: flow struct
+- dtheta: angle of deflection of ray from piezo normal (optional, defaults to zero)
+The output is the path struct.
+
+**genAllPaths**
+
+From a single ray at the generation piezo, there are 16 possible paths through the system represented by the 16 possible path keys. This function iterates createPath to generate all 16 paths, and then returns them. The inputs are:
+- g: geometry struct
+- mat: materials struct
+- x0: x-location ray should start at on generation piezo
+- B: burst struct
+- flow: flow struct
+- dtheta: ray deflection angle from normal (optional, defaults to zero)
+Outputs the paths struct containing all 16 possible paths through the system
+
+**receivedSignal**
+
+After all paths through the system have been calculated, this function can be used to sum all of the ultrasonic bursts that intersect with the reception piezoelectric to obtain the signal that would be measured. The inputs are:
+- paths: A cell array, where each cell is a path through the system that you want to include in the sum. Can be any size in 2D.
+Outputs are in the form [signal, detectionPoints, A], where:
+- signal: the received signal
+- detectionPoints: 2xN array of (x,y) coordinates showing where on the piezo rays intersected with it. Used mainly for debugging.
+- A: array of peak-to-peak amplitudes of each ray which contributes
+
+**receivedSignalHist**
+
+Takes the 'A' output from receivedSIgnal and uses it to construct a histogram. The piezo is split into bins along its length, then the waves that intersect inside each bin are summed, and the peak-to-peak amplitude is measured. Useful to see where on the piezo most of the energy is being received if the transducer is not located optimally. The inputs are:
+- g: geometry struct
+- detPoints: detectionPoints output from receivedSignal
+- Arec: A output from receivedSignal
+- Nbins: Number of bins to split piezo into along its length
+Outputs:
+- Abinned: The amplitude incident on each bin
+- edges: the length along the piezo at the edges of each bin
+These outputs can be put into the histogram function to plot the data.
+
+**pathAnalyser**
+
+Runs through all of the possible paths in a cell array of paths and adds up the waves from all rays of a single path key. It then takes the peak-to-peak amplitude, and moves on to the next pathKey, until it has been through them all. This provides insight into which route through the system energy is taking, and how it all adds up to give you the signal you see. The inputs are:
+- paths: the cell array of path structs
+- display: 1 or 0: 1 displays a bar graph of the results, 0 doesn't
+Outputs:
+pathKeys: the path keys corresponding to the different routes through the system
+pkpk: an array of the peak-to-peak amplitudes of each of the different routes through the system when they reach the reception transducer
+
+**drawGeometry**
+**drawRay**
+**drawPath**
+**drawAllPaths**
+
+**arrival_detect**
+**flow_process_SG_filt**
+
+
