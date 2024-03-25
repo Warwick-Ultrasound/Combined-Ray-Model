@@ -2,6 +2,8 @@
 
 T = 20; % temperature
 
+% ---- PLASTICS ----
+
 % PEEK
 PEEK.clong = c_PEEK(T);
 PEEK.cshear = c_PEEK_shear(T);
@@ -17,6 +19,15 @@ PVC.alphaLong = 267; % longitudinal attenuation
 PVC.alphaShear = 553; % shear attenuation
 PVC.alphaf0 = 1E6; % frequency at which attenuation measured
 
+% perspex
+perspex.clong = 2730;
+perspex.cshear = 1430;
+perspex.rho = 1180;
+perspex.G = calcG(perspex);
+
+
+% ---- Metals ----
+
 % Steel SS316
 steel.clong = 5790;
 steel.cshear = 3220; 
@@ -26,6 +37,8 @@ steel.alphaLong = 8;
 steel.alphaShear = 8;
 steel.alphaf0 = 1E6;
 
+% ---- fluids ----
+
 % water
 water.clong = c_water(20);
 water.rho = 1000;
@@ -33,3 +46,8 @@ water.rho = 1000;
 % air
 air.clong = 330;
 air.rho = 1.293;
+
+function G = calcG(mat)
+    % calculates the shear modulus from the shear speed and density
+    G = mat.rho*mat.cshear^2;
+end
