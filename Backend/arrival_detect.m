@@ -13,8 +13,6 @@ function [starts, stops, envelope] = arrival_detect(volts, N_arrivals)
     [~, sort_ind] = sort(peaks, 'descend');
     locs = locs(sort_ind);
     locs = locs(1:N_arrivals);
- 
-    %% second attempt - low values
 
     lowvals = find(envelope<0.025);
 
@@ -31,13 +29,6 @@ function [starts, stops, envelope] = arrival_detect(volts, N_arrivals)
  
     starts = sort(starts);
     stops = sort(stops);
-end
-function bool = is_zero_cross(volts, ii)
-    if (volts(ii) > 0 && volts(ii+1) < 0 ) || (volts(ii) < 0 && volts(ii+1) > 0)
-        bool = 1;
-    else
-        bool = 0;
-    end
 end
 function [start, stop] = find_start_stop(centre_i, troughs)
     % takes index centre_i and an array of indices, troughs. Finds the
