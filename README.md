@@ -312,11 +312,46 @@ pathKeys: the path keys corresponding to the different routes through the system
 pkpk: an array of the peak-to-peak amplitudes of each of the different routes through the system when they reach the reception transducer
 
 **drawGeometry**
+
+Creates a new figure and draws lines representing the pipe walls and the piezoelectric elements. This creates a base on top of which rays can be drawn. The inputs are:
+- g: geometry struct
+- newFig: set to 'off' to not create a new figure. Defaults to on. (optional)
+
 **drawRay**
+
+Draws a single ray (in one material) on top of the geometry figure created using drawGeometry. Inputs are:
+- ray: the ray struct
+- lineSpec: lineSpec as inputted to MATLABs plot function to format line. e.g. 'b-' for a blue solid line.
+
 **drawPath**
+
+Iterates drawRay over a path struct to draw out a whole path. Uses blue lines for longitudinal and red for shear. Inputs are:
+- path: the path struct
+
 **drawAllPaths**
 
+Takes the cell array containing all paths and iterates through it, drawing them all. The input can be 1D or 2D. Inputs:
+- paths: the cell array containing one path per cell
+
 **arrival_detect**
+
+Takes an ultrasonic signal and finds the arrivals, then returns the starting and stopping indices so that they can be cropped out of the array. Inputs are:
+- volts: the y-coordinate array of the ultrasonic signal
+- N_arrivals: The number of arrivals to find
+Outputs [starts, stops, envelope]:
+- starts: an array of indices indicating the starting points of the N_arrivals arrivals of ultrasound
+- stops: the corresponding end points of the arrivals
+- envelope: the envelope of the input signal (normalised). This is part of how the function works so this is a debugging tool in case it doesn't select the arrivals you wanted
+
 **flow_process_SG_filt**
 
-
+Takes a pair of ultrasonic signals, potentially containing multiple arrivals in each, and measures the transit time differences. The inputs are:
+- upvolts: the upstream signal
+- downvolts: the downstream signal
+- time: the time array
+- N_interp: the factor by which the number of points in the signals is increased before cross-correlation
+- starts: arrival start indices from arrival_detect
+- stops: arrival end indices from arrival_detect
+Outputs:
+- dts: an array of time differences, one per arrival
+- pkpk: an array containing the peak to peak amplitudes of each of the arrivals
