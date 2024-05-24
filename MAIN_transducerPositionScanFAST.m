@@ -1,7 +1,6 @@
-% MAIN script - Scans the transducer position around where a user would put
-% them for the longitudinal and shear paths. Records the amplitude from the
-% different paths through the system as a function of transducer position
-% and the correction factor that would be required.
+% This script contains a faster way to obtain the amplitude plots as a
+% function of transducer separation - cuts out all of the other analysis
+% stuff and uses parallelisation.
 
 clear;
 clc;
@@ -29,11 +28,18 @@ LNNLsep = transducerPositionCalc(gInp, mat, 'LNNL');
 LLLLsep = transducerPositionCalc(gInp, mat, 'LLLL');
 SNNSsep = transducerPositionCalc(gInp, mat, 'SNNS');
 SSSSsep = transducerPositionCalc(gInp, mat, 'SSSS');
+if isnan(LLLLsep) % decides which signals are plotted in the breakdown plots
+    plot1 = "SNNS";
+    plot2 = "SSSS";
+else
+    plot1 = "LNNL";
+    plot2 = "LLLL";
+end
 userSeps = [LNNLsep, LLLLsep, SNNSsep, SSSSsep]; % separations that the user may select
 gInp.sep = SNNSsep; % pick one that will always be non-nan for initial setup.
 minSep = min(userSeps)-15E-3; % smaller than smallest user separation
 maxSep = max(userSeps)+20E-3;
-seps = linspace(minSep, maxSep, 50); % list of transducer separations to calculate for (50)-------------------------------
+seps = linspace(minSep, maxSep, 50); % list of transducer separations to calculate for --------------(50)
 
 % ultrasonic burst parameters
 t.min = -10E-6; % allows it to be centred on zero at start
@@ -60,36 +66,23 @@ Nang = 25; % number of rays angled at each edge of piezo for beam spread -------
 g = genGeometry(gInp); % generate temporary geometry for calculation of rays
 [x0, dtheta, A] = genBeam(g, mat, B, Nperp, Nang); % positions, deflections and amplitudes of rays
 
-% flow profile parameters
-initialFlow.profile = @laminar;
-initialFlow.v_ave = 1; % initial value, will cycle through v_ave_list
-initialFlow.N = 250;
-initialFlow.n = 7;
-
-% measurement of incient amplitude on piezo
-Nbins = 15;
-Abinned = nan(length(seps), Nbins);
-
-% calculate theoretical for plug flow
-theta_f = asind( mat.fluid.clong/mat.transducer.clong * sind(g.thetaT) );
-theoryTTD = 4*(2*g.R)*abs(initialFlow.v_ave)*tand(theta_f)/mat.fluid.clong^2;
+% flow profile parameters - just a placeholder - doesnt affect anything
+flow.profile = @laminar;
+flow.v_ave = 0; % initial value, will cycle through v_ave_list
+flow.N = 250;
+flow.n = 7;
 
 % create a directory to output into
 dirName = "Data\Data_"+string(datetime('now', 'Format', 'dd_MM_yy__HH_mm_ss'));
 mkdir(dirName);
 
 % cycle transducer positions
-TTD = nan(length(seps),1); % one for each transducer separation
 pkpk = nan(16, length(seps)); % 1 column per separation, 1 row per pathKey
-FPCF = nan(length(seps),1);
 pkpk_tot = nan(length(seps), 1); % total signal amplitude at each separation from summed waveforms
-for ss = 1:length(seps)
+parfor ss = 1:length(seps)
 
     % progress indicator
     disp(string((ss-1)/length(seps)*100)+"% done");
-
-    % reset flow struct
-    flow = initialFlow;
 
     % generate geometry
     g = gInp;
@@ -97,15 +90,7 @@ for ss = 1:length(seps)
     g = genGeometry(g);
 
     % create the paths
-    Pdown = cell(16, length(x0)); % one column per source ray
-    Pup = cell(size(Pdown));
-    for ii = 1:length(x0)
-        paths = genAllPaths(g, mat, x0(ii), B, flow, dtheta(ii), A(ii));
-        for jj = 1:16
-            Pdown{jj,ii} = paths{jj};
-        end
-    end
-    flow.v_ave = -flow.v_ave; % switch flow to other direction
+    Pup = cell(16, length(x0)); % one column per source ray
     for ii = 1:length(x0)
         paths = genAllPaths(g, mat, x0(ii), B, flow, dtheta(ii), A(ii));
         for jj = 1:16
@@ -115,19 +100,12 @@ for ss = 1:length(seps)
 
     % calculate received signals
     [up, detectionPoints, Arec] = receivedSignal(Pup);
-    down = receivedSignal(Pdown);
 
-    % add to Abinned to see where energy is incident on piezo
-    Abinned(ss,:) = receivedSignalHist(g, detectionPoints, Arec, Nbins);
-
-    % measure TTD
-    [start, stop] = arrival_detect(up, 1); % detect location of arrival
-    [TTD(ss), ~] = flow_process_SG_filt(up, down, time, N_interp, start, stop);
+    % peak to peak of total received signal
     pkpk_tot(ss) = max(up) - min(up);
 
-    % Analyse where the contributions come from - doesn't matter which flow
-    % rate, so just do last one
-    [pathKeys, pkpk(:,ss)] = pathAnalyser(Pup, 0);
+    % Analyse where the contributions come from
+    [~, pkpk(:,ss)] = pathAnalyser(Pup, 0);
 
     % calculate and plot signals from LNNL and LLLL paths
     LLLLsig = zeros(size(Pup{1,1}.burst));
@@ -135,27 +113,25 @@ for ss = 1:length(seps)
     for ii = 1:size(Pup,1)
         for jj = 1:size(Pup,2)
             if Pup{ii,jj}.detected
-                if Pup{ii,jj}.pathKey == "SNNS"
+                if Pup{ii,jj}.pathKey == plot1
                     LNNLsig = LNNLsig + Pup{ii,jj}.burst;
-                elseif Pup{ii,jj}.pathKey == "SSSS"
+                elseif Pup{ii,jj}.pathKey == plot2
                     LLLLsig = LLLLsig + Pup{ii,jj}.burst;
                 end
             end
         end
     end
     fig = figure('visible', 'off');
+    [start, stop] = arrival_detect(up, 1);
     plot(time(start:stop)/1E-6, LNNLsig(start:stop), time(start:stop)/1E-6, LLLLsig(start:stop));
     hold on;
     plot(time(start:stop)/1E-6, LNNLsig(start:stop)+LLLLsig(start:stop), 'k--');
-    legend('SNNS', 'SSSS', 'SNNS+SSSS');
+    legend(plot1, plot2, plot1+"+"+plot2);
     xlabel('Time /\mus');
     ylabel('Amplitude /arb.');
     title("Separation = "+string(seps(ss)/1E-3)+" mm");
     print(dirName+'\\Sepn_'+string(seps(ss)/1E-3)+"_mm_sigBreakdown.pdf", '-dpdf', '-bestfit');
     close(fig);
-
-    % calculate theoretical for plug flow
-    FPCF(ss) = theoryTTD/TTD(ss); % linear => only need one point to find FPCF
 
     % plot figure and save in background
     fig = figure('visible', 'off');
@@ -166,7 +142,7 @@ for ss = 1:length(seps)
     close(fig);
 
     fig = figure('visible', 'off');
-    plot(time(start:stop)/1E-6, up(start:stop), time(start:stop)/1E-6, down(start:stop));
+    plot(time(start:stop)/1E-6, up(start:stop));
     xlabel('Time /\mus');
     ylabel('Amplitude /arb.');
     title("Separation = "+string(seps(ss)/1E-3)+" mm");
@@ -175,16 +151,20 @@ for ss = 1:length(seps)
 
 end
 
+% generate pathKeys array outside of parfor
+g = gInp;
+g.sep = seps(1);
+g = genGeometry(g);
+paths = genAllPaths(g, mat, x0(1), B, flow, dtheta(1), A(1));
+col = paths(:,1); % one source ray, all resultant rays. Contains all poss pathKeys
+pathKeys = cell(size(col));
+for ii = 1:length(col)
+    pathKeys{ii} = col{ii}.pathKey;
+end
+
 % sometimes, some of the paths not possible => don't plot their distances
 nonNaN = ~isnan(userSeps);
 userSepsKeys = {'LNNL', 'LLLL', 'SNNS', 'SSSS'};
-
-figure;
-plot(seps/1E-3, FPCF);
-xline(userSeps(nonNaN)/1E-3, 'k-', userSepsKeys(nonNaN));
-xlabel("Transducer Separation /mm");
-ylabel("Hydraulic Correction Factor");
-print(dirName + '\FPCF.pdf', '-dpdf', '-bestfit');
 
 figure;
 bar3(seps/1E-3, pkpk.');
@@ -212,20 +192,11 @@ hold on;
 plot(seps/1E-3, pkpk_tot, 'k--');
 xline(userSeps(nonNaN)/1E-3, 'k-', userSepsKeys(nonNaN));
 leg = pathKeys(I);
-leg(end+1) = 'Received Amplitude';
+leg{end+1} = 'Received Amplitude';
 legend(leg);
 xlabel('Separation /mm');
 ylabel('Peak to Peak Ampltiude /arb.');
 print(dirName + '\max_pkpk_top5.pdf', '-dpdf', '-bestfit');
-
-% plot amplitude into each bin on the piezo
-L = linspace(0, gInp.Lp, Nbins); % NOTE: approximate only - slight shift
-figure;
-surf(seps/1E-3, L/1E-3, Abinned.', 'EdgeColor', 'none');
-xlabel('Separation /mm');
-ylabel('Length along piezo /mm');
-zlabel('Amplitude in bin /arb.');
-zlim([0, max(Abinned, [], 'all')]);
 
 % save workspace to record all params and most output numerically
 save(dirName + '\workspace');
