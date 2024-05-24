@@ -44,7 +44,7 @@ function [dts, pkpk] = flow_process_SG_filt(upvolts, downvolts, time, N_interp, 
         dt =  corr_x(max_i);
         
         %add to dts
-        dts(arr_i) = dt; %subtract time difference due to electronics box
+        dts(arr_i) = dt;
        
     end %for over arrivals
 

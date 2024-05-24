@@ -21,7 +21,7 @@ mat.coupling = 'rigid';
 
 % define geometry
 gInp.R = 26.8E-3;
-gInp.thick = 4.7E-3;
+gInp.thick = 3.0E-3;
 gInp.thetaT = 38;
 gInp.hp = 15E-3;
 gInp.Lp = 10E-3;
@@ -33,7 +33,7 @@ userSeps = [LNNLsep, LLLLsep, SNNSsep, SSSSsep]; % separations that the user may
 gInp.sep = SNNSsep; % pick one that will always be non-nan for initial setup.
 minSep = min(userSeps)-15E-3; % smaller than smallest user separation
 maxSep = max(userSeps)+20E-3;
-seps = linspace(minSep, maxSep, 50); % list of transducer separations to calculate for
+seps = linspace(minSep, maxSep, 50); % list of transducer separations to calculate for (50)-------------------------------
 
 % ultrasonic burst parameters
 t.min = -10E-6; % allows it to be centred on zero at start
@@ -51,12 +51,12 @@ time = linspace(t.min, t.max, t.len);
 B = genBurst(time, f0, BW);
 
 % timing precsion
-t.ddt = 0.01E-9; % smallest change in TTD able to measure
+t.ddt = 0.1E-9; % smallest change in TTD able to measure
 N_interp = ceil(t.dt/t.ddt); % interpolation factor required
 
 % Rays to simulate Parameters(16 total rays possible for each 1 source ray)
-Nperp = 50; % Number of source rays perpendicular to piezo
-Nang = 15; % number of rays angled at each edge of piezo for beam spread
+Nperp = 50; % Number of source rays perpendicular to piezo --------------------------------------------(50)
+Nang = 25; % number of rays angled at each edge of piezo for beam spread ------------------------------(25)
 g = genGeometry(gInp); % generate temporary geometry for calculation of rays
 [x0, dtheta, A] = genBeam(g, mat, B, Nperp, Nang); % positions, deflections and amplitudes of rays
 
@@ -83,7 +83,7 @@ TTD = nan(length(seps),1); % one for each transducer separation
 pkpk = nan(16, length(seps)); % 1 column per separation, 1 row per pathKey
 FPCF = nan(length(seps),1);
 pkpk_tot = nan(length(seps), 1); % total signal amplitude at each separation from summed waveforms
-for ss = 1:length(seps)
+parfor ss = 1:length(seps)
 
     % progress indicator
     disp(string((ss-1)/length(seps)*100)+"% done");
@@ -122,11 +122,12 @@ for ss = 1:length(seps)
 
     % measure TTD
     [start, stop] = arrival_detect(up, 1); % detect location of arrival
-    [TTD(ss), pkpk_tot(ss)] = flow_process_SG_filt(up, down, time, N_interp, start, stop);
+    [TTD(ss), ~] = flow_process_SG_filt(up, down, time, N_interp, start, stop);
+    pkpk_tot(ss) = max(up) - min(up);
 
     % Analyse where the contributions come from - doesn't matter which flow
     % rate, so just do last one
-    [pathKeys, pkpk(:,ss)] = pathAnalyser(Pup, 0);
+    [~, pkpk(:,ss)] = pathAnalyser(Pup, 0);
 
     % calculate and plot signals from LNNL and LLLL paths
     LLLLsig = zeros(size(Pup{1,1}.burst));
@@ -134,9 +135,9 @@ for ss = 1:length(seps)
     for ii = 1:size(Pup,1)
         for jj = 1:size(Pup,2)
             if Pup{ii,jj}.detected
-                if Pup{ii,jj}.pathKey == "LNNL"
+                if Pup{ii,jj}.pathKey == "SNNS"
                     LNNLsig = LNNLsig + Pup{ii,jj}.burst;
-                elseif Pup{ii,jj}.pathKey == "LLLL"
+                elseif Pup{ii,jj}.pathKey == "SSSS"
                     LLLLsig = LLLLsig + Pup{ii,jj}.burst;
                 end
             end
@@ -146,7 +147,7 @@ for ss = 1:length(seps)
     plot(time(start:stop)/1E-6, LNNLsig(start:stop), time(start:stop)/1E-6, LLLLsig(start:stop));
     hold on;
     plot(time(start:stop)/1E-6, LNNLsig(start:stop)+LLLLsig(start:stop), 'k--');
-    legend('LNNL', 'LLLL', 'LNNL+LLLL');
+    legend('SNNS', 'SSSS', 'SNNS+SSSS');
     xlabel('Time /\mus');
     ylabel('Amplitude /arb.');
     title("Separation = "+string(seps(ss)/1E-3)+" mm");
@@ -173,6 +174,7 @@ for ss = 1:length(seps)
     close(fig);
 
 end
+[pathKeys, ~] = pathAnalyser(Pup, 0); % gets pathKeys outside of parfor
 
 % sometimes, some of the paths not possible => don't plot their distances
 nonNaN = ~isnan(userSeps);
@@ -192,8 +194,8 @@ xticklabels(pathKeys);
 view(62,18);
 
 % plot pk-pk of 5 largest contributors
-maxpkpk = max(pkpk, [], 2);
-[~,I] = maxk(maxpkpk, 5);
+maxpkpk = max(pkpk, [], 2); % max from each path
+[~,I] = maxk(maxpkpk, 5); % find 5 paths which have the largest maxima
 % if any row contains all zeros, remove it.
 plotLines = pkpk(I,:);
 remList = []; % list of indicies to remove
