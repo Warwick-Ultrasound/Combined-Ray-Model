@@ -12,15 +12,15 @@ addpath('Backend');
 
 % define materials
 run materials.m; % imports material structs
-mat.pipe = PVC;
+mat.pipe = steel;
 mat.transducer = PEEK;
 mat.fluid = water;
 mat.outside = air;
-mat.coupling = 'rigid';
+mat.coupling = 'slip';
 
 % define geometry
 gInp.R = 26.8E-3;
-gInp.thick = 3.0E-3;
+gInp.thick = 3E-3;
 gInp.thetaT = 38;
 gInp.hp = 15E-3;
 gInp.Lp = 10E-3;
